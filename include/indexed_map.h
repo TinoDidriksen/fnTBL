@@ -122,11 +122,11 @@ public:
 	typename map_type::iterator f = index_map.find(elem);
 	if(f == index_map.end()) {
 	  if(available_inds.size()>0) {
-		f = index_map.insert(make_pair(elem, available_inds.back())).first;
+		f = index_map.insert(std::make_pair(elem, available_inds.back())).first;
 		storage[available_inds.back()] = & const_cast<index2&>(f->first);
  		available_inds.pop_back();
 	  } else {
-		f = index_map.insert(make_pair(elem, storage.size())).first;
+		f = index_map.insert(std::make_pair(elem, storage.size())).first;
 		storage.push_back(& const_cast<index2&>(f->first));
 	  }
 	}

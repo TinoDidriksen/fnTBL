@@ -163,7 +163,7 @@ protected:
 template <class type, class size_type>
 inline bool 
 operator < (const svector<type, size_type>& v1, const svector<type, size_type>& v2) {
-  return lexicographical_compare(v1.begin(), v1.end(),
+  return std::lexicographical_compare(v1.begin(), v1.end(),
 				 v2.begin(), v2.end());
 }
 

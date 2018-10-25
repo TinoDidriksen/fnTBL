@@ -62,7 +62,7 @@ OPTIONS = -D$(TYPE_TO_USE) -DFLOAT=float -DWORD_TYPE="unsigned int" -DPOSITION_T
 
 WARNS = -Wall -Wno-sign-compare
 
-CXXFLAGS = -ftemplate-depth-23 -fstrict-aliasing ${OPTIM} ${ARCHOPTIM} ${OPTIONS} ${WARNS} ${LIBPATH} ${INCPATH} #-frepo 
+CXXFLAGS = -fstrict-aliasing ${OPTIM} ${ARCHOPTIM} ${OPTIONS} ${WARNS} ${LIBPATH} ${INCPATH} #-frepo 
 CCFLAGS  = ${CXXFLAGS}
 CFLAGS   = $(CCFLAGS)
 LD = ${CXX} ${CXXFLAGS}

@@ -298,12 +298,12 @@ public:
     case 0:
       if(data.slist_field.size() <= wrd_index) 
 	data.slist_field.resize(wrd_index+1);
-      data.slist_field[wrd_index].push_back(pair_map.insert(make_pair(t1,t2)));
+      data.slist_field[wrd_index].push_back(pair_map.insert(std::make_pair(t1,t2)));
       break;
     case 1:
       if(data.set_field.size() <= wrd_index)
 	data.set_field.resize(wrd_index+1);
-      data.set_field[wrd_index].insert(pair_map.insert(make_pair(t1, t2)));
+      data.set_field[wrd_index].insert(pair_map.insert(std::make_pair(t1, t2)));
       break;
     }
   }
