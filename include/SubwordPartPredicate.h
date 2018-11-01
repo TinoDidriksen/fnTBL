@@ -33,51 +33,51 @@
 #include "SingleFeaturePredicate.h"
 #include "svector.h"
 
-class SubwordPartPredicate: public SingleFeaturePredicate {
-  typedef SubwordPartPredicate self;
-  typedef SingleFeaturePredicate super;
+class SubwordPartPredicate : public SingleFeaturePredicate {
+    using self = SubwordPartPredicate;
+    using super = SingleFeaturePredicate;
+
 public:
-  typedef vector<pair<featureIndexType, char> > rep_vector;
-  typedef vector<bit_vector> bool2D;
-  typedef svector<wordType> wordType_svector;
-  typedef vector<vector<wordType_svector> > word_list_rep_type;
+    using rep_vector = std::vector<std::pair<featureIndexType, char>>;
+    using bool2D = std::vector<bit_vector>;
+    using wordType_svector = svector<wordType>;
+    using word_list_rep_type = std::vector<std::vector<wordType_svector>>;
 
 protected:
-  char len;
+    char len;
 
 public:
-  SubwordPartPredicate(relativePosType sample, storage_type feature, char length = 1):
-	super(sample, feature),
-	len(length) 
-  {
-  }
+    SubwordPartPredicate(relativePosType sample, storage_type feature, char length = 1)
+      : super(sample, feature)
+      , len(length) {
+    }
 
-  SubwordPartPredicate(const self& p): 
-	super(p),
-	len(p.len)
-  {
-  }
+    SubwordPartPredicate(const self& p)
 
-  static rep_vector feature_len_pair_list;
+      = default;
 
-  void addToList() {
-	feature_len_pair_list.push_back(make_pair(feature_id, len));
-  }
+    static rep_vector feature_len_pair_list;
 
-  virtual bool test(const wordType2D& corpus, int sample_ind, const wordType value) const = 0;
-  
-  virtual double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& ) const {
-	if(test(corpus, sample_ind, value))
-	  return 1.0;
-	else
-	  return 0.0;
-  }
+    void addToList() {
+        feature_len_pair_list.push_back(std::make_pair(feature_id, len));
+    }
 
-  static void Initialize(int sz, word_list_rep_type& wl, bool2D& seen);
+    bool test(const wordType2D& corpus, int sample_ind, wordType value) const override = 0;
 
-  bool is_indexable() const {
-	return true;
-  }
+    double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& /*context_prob*/) const override {
+        if (test(corpus, sample_ind, value)) {
+            return 1.0;
+        }
+        {
+            return 0.0;
+        }
+    }
+
+    static void Initialize(int size, word_list_rep_type& feature_lookup, bool2D& seen);
+
+    bool is_indexable() const override {
+        return true;
+    }
 };
 
 #endif

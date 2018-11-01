@@ -29,54 +29,54 @@
 
 #ifndef __TYPEDEF_H
 #define __TYPEDEF_H
-#define __STL_NO_NAMESPACES
+
 #include <string>
 #include <set>
 #include <vector>
 
-typedef int intType;
-typedef int scoreType;   // the type of score for good/bad
+using intType = int;
+using scoreType = int; // the type of score for good/bad
 
-// typedef unsigned int wordType;
+// using wordType = unsigned int;
 
 // The type for the data
-typedef WORD_TYPE wordType;
+using wordType = WORD_TYPE;
 
 // The type for feature indices
-typedef POSITION_TYPE featureIndexType;
+using featureIndexType = POSITION_TYPE;
 
-typedef wordType* wordType1D;
-typedef char relativePosType;
+using wordType1D = wordType*;
+using relativePosType = char;
 
-typedef std::vector<wordType> wordTypeVector;
-typedef std::vector<wordType1D > wordType2D;
-typedef std::vector<wordTypeVector> wordType2DVector;
-typedef std::vector<wordType2D > wordType3D;
-typedef std::vector<wordType2DVector> wordType3DVector;
+using wordTypeVector = std::vector<wordType>;
+using wordType2D = std::vector<wordType1D>;
+using wordType2DVector = std::vector<wordTypeVector>;
+using wordType3D = std::vector<wordType2D>;
+using wordType3DVector = std::vector<wordType2DVector>;
 
 
-// typedef unsigned short featureIndexType;
-typedef std::vector<featureIndexType> featureIndexType1D;
-typedef std::vector<featureIndexType1D > featureIndexType2D;
+// using featureIndexType = unsigned short;
+using featureIndexType1D = std::vector<featureIndexType>;
+using featureIndexType2D = std::vector<featureIndexType1D>;
 
-typedef std::vector<std::string> string1D;
-typedef std::set<std::string> string_set;
-typedef std::set<wordType> wordType_set;
+using string1D = std::vector<std::string>;
+using string_set = std::set<std::string>;
+using wordType_set = std::set<wordType>;
 
-typedef std::vector<int> int1D;
-typedef std::vector<int1D> int2D;
-typedef std::vector<int2D> int3D;
+using int1D = std::vector<int>;
+using int2D = std::vector<int1D>;
+using int3D = std::vector<int2D>;
 
-typedef std::vector<float> float1D;
-typedef std::vector<float1D> float2D;
+using float1D = std::vector<float>;
+using float2D = std::vector<float1D>;
 
-typedef std::vector<unsigned short int> shortint1D;
+using shortint1D = std::vector<unsigned short>;
 
-typedef short int * shortintPtr;
+using shortintPtr = short*;
 
 static const std::string UNK_string = "UNKNOWN";
 
-static const float EPSILON = 1e-5;  // anything within this is the same
+static const double EPSILON = 1e-5; // anything within this is the same
 
 static const int THRESHOLDNUMRULES = 500;
 
@@ -86,5 +86,3 @@ static const int WORD = 0;
 static const int POS = 1;
 
 #endif
-
-

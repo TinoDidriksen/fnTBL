@@ -35,118 +35,118 @@
 #include "typedef.h"
 #include "indexed_map.h"
 
-template <class type = int>
+template<class type = int>
 struct ReverseSorter {
-  typedef std::vector<type> rep_type;
-  const rep_type& counts;
-  ReverseSorter(const rep_type& v): counts(v) {}
-  bool operator() (int a, int b) {
-    return counts[a] > counts[b];
-  }
+    using rep_type = std::vector<type>;
+    const rep_type& counts;
+    ReverseSorter(const rep_type& v)
+      : counts(v) {}
+    bool operator()(int a, int b) {
+        return counts[a] > counts[b];
+    }
 };
 
-class Node
-{
+class Node {
 public:
-  typedef Node self;
+    using self = Node;
 
-  typedef pair<unsigned int, unsigned short> example_index;
-  typedef std::vector<example_index> example_index1D;
-  typedef indexed_map<Rule, unsigned, HASH_NAMESPACE::hash_map<Rule, unsigned> > rule_hash_map;
+    using example_index = std::pair<unsigned int, unsigned short>;
+    using example_index1D = std::vector<example_index>;
+    using rule_hash_map = indexed_map<Rule, unsigned, HASH_NAMESPACE::hash_map<Rule, unsigned>>;
 
-  typedef pair<unsigned short, int1D> short_int1D_pair;
-  typedef std::vector<short_int1D_pair> short_int1D_pair1D;
-  typedef map<unsigned int, short_int1D_pair1D> rule_list_type;
+    using short_int1D_pair = std::pair<unsigned short, int1D>;
+    using short_int1D_pair1D = std::vector<short_int1D_pair>;
+    using rule_list_type = std::map<unsigned int, short_int1D_pair1D>;
 
-  Node():ID(LastID++), ruleID(-1), yesChild(0), noChild(0){}
+    Node()
+      : ID(LastID++) {}
 
-  Node(example_index1D &myExamples);
+    Node(example_index1D& myExamples);
 
-  Node(string &data) {
-    initialize(data);
-  }
+    Node(std::string& data) {
+        initialize(data);
+    }
 
-  Node(const Node &node):
-    ID(node.ID),
-    ruleID(node.ruleID),
-    examples(node.examples),
-    yesChild(node.yesChild),
-    noChild(node.noChild),
-    classCounts(node.classCounts),
-    probs(node.probs),
-    totalCount(node.totalCount),
-    entropy(node.entropy)
-  {}
-  
-  ~Node(){
-    delete yesChild;
-    delete noChild;
-  }
+    Node(const Node& node)
+      : ID(node.ID)
+      , ruleID(node.ruleID)
+      , examples(node.examples)
+      , yesChild(node.yesChild)
+      , noChild(node.noChild)
+      , classCounts(node.classCounts)
+      , probs(node.probs)
+      , totalCount(node.totalCount)
+      , entropy(node.entropy) {}
 
-  void initialize(const string& data);
+    ~Node() {
+        delete yesChild;
+        delete noChild;
+    }
 
-  void split(int rule_no);
-  void splitExamples(const bit_vector& yes_sample);
+    void initialize(const std::string& line);
 
-  const self* findClassOfSample(const example_index& example) const;
-  int getChunk();
-  string probString() const;
-  void createLeaf();
-  void updateCounts();
-  void growDT();
-  void growDT(rule_hash_map&, const rule_list_type&);
-  void computeEntropy();
+    void split(int rule_no);
+    void splitExamples(const bit_vector& yes_sample);
+
+    const self* findClassOfSample(const example_index& example) const;
+    int getChunk();
+    std::string probString() const;
+    void createLeaf();
+    void updateCounts();
+    void growDT();
+    void growDT(rule_hash_map& /*dt_rules*/, const rule_list_type& /*rules_applied*/);
+    void computeEntropy();
 
 protected:
-  void createRules(rule_hash_map&, rule_list_type&);
+    void createRules(rule_hash_map& /*dt_rules*/, rule_list_type& /*node_rules_applied*/);
 
-  int findBestRule(rule_hash_map&, const rule_list_type&);
-  void splitExamplesByRule(int bestRuleID, const rule_list_type& rule_applic_list);
+    int findBestRule(rule_hash_map& /*dt_rules*/, const rule_list_type& /*node_rules_applied*/);
+    void splitExamplesByRule(int bestRuleID, const rule_list_type& rules_applied);
 
 public:
-  static void addSimpleTemplates(int1D&, int1D&);
-  void computeProbs(const example_index&, const float2D& hypothesis);
+    static void addSimpleTemplates(int1D& /*simple_predicate_template_ids*/, int1D& /*simple_truth_template_ids*/);
+    void computeProbs(const example_index& /*example*/, const float2D& hypothesis);
 
-  Node &operator= (const Node& node) {
-    if (this != &node) {
-      ID = node.ID;
-      ruleID = node.ruleID;
-      examples = node.examples;
-      yesChild = node.yesChild;
-      noChild = node.noChild;
-      classCounts = node.classCounts;
-      totalCount = node.totalCount;
-      entropy = node.entropy;
-      probs = node.probs;
+    Node& operator=(const Node& node) {
+        if (this != &node) {
+            ID = node.ID;
+            ruleID = node.ruleID;
+            examples = node.examples;
+            yesChild = node.yesChild;
+            noChild = node.noChild;
+            classCounts = node.classCounts;
+            totalCount = node.totalCount;
+            entropy = node.entropy;
+            probs = node.probs;
+        }
+        return *this;
     }
-    return *this;
-  }
 
-  friend ostream& operator << (ostream& , const self&);
-  friend istream& operator >> (istream&, self&);
+    friend std::ostream& operator<<(std::ostream& /*ostr*/, const self& /*nd*/);
+    friend std::istream& operator>>(std::istream& /*istr*/, self& /*nd*/);
 
-  void clearCountsAndProbs() {
-    int1D ctemp;
-    float1D ptemp;
-    classCounts.swap(ctemp);
-    probs.swap(ptemp);
-  }
+    void clearCountsAndProbs() {
+        int1D ctemp;
+        float1D ptemp;
+        classCounts.swap(ctemp);
+        probs.swap(ptemp);
+    }
 
 public:
-  int ID;
-  int ruleID;
-  example_index1D examples;
+    int ID;
+    int ruleID{ -1 };
+    example_index1D examples;
 
-  Node *yesChild;
-  Node *noChild;
+    Node* yesChild{ nullptr };
+    Node* noChild{ nullptr };
 
-  int1D classCounts;  
-  mutable float1D probs;  
-  mutable int totalCount;
+    int1D classCounts;
+    mutable float1D probs;
+    mutable int totalCount;
 
-  double entropy;
+    double entropy;
 
-  static int LastID;
+    static int LastID;
 };
 
 

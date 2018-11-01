@@ -30,108 +30,117 @@
   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 */
-  
-#ifndef __PrefixSuffixIdentityPredicate_h__ 
+
+#ifndef __PrefixSuffixIdentityPredicate_h__
 #define __PrefixSuffixIdentityPredicate_h__
 
 #include "SingleFeaturePredicate.h"
 #include "typedef.h"
 
-class PrefixSuffixIdentityPredicate: public PrefixSuffixPredicate {
-  typedef PrefixSuffixIdentityPredicate self;
-  typedef PrefixSuffixPredicate super;
+class PrefixSuffixIdentityPredicate : public PrefixSuffixPredicate {
+    using self = PrefixSuffixIdentityPredicate;
+    using super = PrefixSuffixPredicate;
 
 public:
-  PrefixSuffixIdentityPredicate(relativePosType sample, storage_type feature, bool is_p= false, char length=1):
-	super(sample, feature, is_p, length)
-  {}
-  
-  PrefixSuffixIdentityPredicate(const self& pred):
-	super(pred)
-  {}
+    PrefixSuffixIdentityPredicate(relativePosType sample, storage_type feature, bool is_p = false, char length = 1)
+      : super(sample, feature, is_p, length) {}
 
-  virtual ~PrefixSuffixIdentityPredicate() {}
+    PrefixSuffixIdentityPredicate(const self& pred)
+
+      = default;
+
+    ~PrefixSuffixIdentityPredicate() override = default;
 
 
-  virtual bool test(const wordType2D& corpus, int sample_ind, const wordType value) const {
-	static Dictionary& dict = Dictionary::GetDictionary();
-	const string& xfix = dict[value];
-	ON_DEBUG(
-			 assert (len+2==xfix.size())
-			 );
+    bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
+        static Dictionary& dict = Dictionary::GetDictionary();
+        const std::string& xfix = dict[value];
+        ON_DEBUG(
+          assert(len + 2 == xfix.size()));
 
-	const string& word = dict[corpus[sample_difference+sample_ind][feature_id]];
+        const std::string& word = dict[corpus[sample_difference + sample_ind][feature_id]];
 
-	if(word.size()<len)
-	  return false;
+        if (word.size() < len) {
+            return false;
+        }
 
-	string::const_iterator p1, p2;
+        std::string::const_iterator p1, p2;
 
-	if(is_prefix) {
-	  p1 = xfix.begin();
-	  p2 = word.begin();
-	}
-	else {
-	  p1 = xfix.end()-len;
-	  p2 = word.end()-len;
-	}
+        if (is_prefix) {
+            p1 = xfix.begin();
+            p2 = word.begin();
+        }
+        else {
+            p1 = xfix.end() - len;
+            p2 = word.end() - len;
+        }
 
-	unsigned l=0;
-	for( ; l<len ; ++p1,++p2, ++l) 
-	  if(*p1 != *p2)
-		return false;
+        unsigned l = 0;
+        for (; l < len; ++p1, ++p2, ++l) {
+            if (*p1 != *p2) {
+                return false;
+            }
+        }
 
-	return true;
-  }
+        return true;
+    }
 
-  self& operator= (const self& s) {
-	super::operator= (s);
-	return *this;
-  }
+    self& operator=(const self& s) {
+        super::operator=(s);
+        return *this;
+    }
 
-  virtual string printMe(wordType instance) const {
-	Dictionary& dict = Dictionary::GetDictionary();
-	const string& addition = dict[instance];
-	static string add_size;
-	add_size = itoa(len);
-	if(max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0)
-	  return PredicateTemplate::name_map[feature_id] + "::" + 
-		(is_prefix ? add_size + "~~" : "~~" + add_size) + "=" + addition;
-	else
-	  return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" + 
-		(is_prefix ? add_size + "~~" : "~~" + add_size) + "=" + addition;
-  }
+    std::string printMe(wordType instance) const override {
+        Dictionary& dict = Dictionary::GetDictionary();
+        const std::string& addition = dict[instance];
+        static std::string add_size;
+        add_size = itoa(len);
+        if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
+            return PredicateTemplate::name_map[feature_id] + "::" +
+                   (is_prefix ? add_size + "~~" : "~~" + add_size) + "=" + addition;
+        }
+        {
+            return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" +
+                   (is_prefix ? add_size + "~~" : "~~" + add_size) + "=" + addition;
+        }
+    }
 
-  void instantiate(const wordType2D&, int sample_ind, wordTypeVector&) const;
-  void identify_strings(wordType word_id, wordType_set& words) const;
+    void instantiate(const wordType2D& /*corpus*/, int sample_ind, wordTypeVector& /*instances*/) const override;
+    void identify_strings(wordType word_id, wordType_set& words) const override;
 };
 
 inline void PrefixSuffixIdentityPredicate::instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const {
-  Dictionary& dict = Dictionary::GetDictionary();
-  const string& word = dict[corpus[sample_ind+sample_difference][feature_id]];
-  string::size_type word_len = word.size();
-  if(word_len<=len)
-	return;
-  instances.resize(1);
+    Dictionary& dict = Dictionary::GetDictionary();
+    const std::string& word = dict[corpus[sample_ind + sample_difference][feature_id]];
+    std::string::size_type word_len = word.size();
+    if (word_len <= len) {
+        return;
+    }
+    instances.resize(1);
 
-  if(is_prefix) 
-	instances[0] = dict[word.substr(0,len)+"~~"];
-  else
-	instances[0] = dict["~~"+word.substr(word_len-len,len)];
+    if (is_prefix) {
+        instances[0] = dict[word.substr(0, len) + "~~"];
+    }
+    else {
+        instances[0] = dict["~~" + word.substr(word_len - len, len)];
+    }
 }
 
 inline void PrefixSuffixIdentityPredicate::identify_strings(wordType word_id, wordType_set& words) const {
-  Dictionary& dict = Dictionary::GetDictionary();
-  const string& word = dict[word_id];
-  string::size_type word_len = word.size();
+    Dictionary& dict = Dictionary::GetDictionary();
+    const std::string& word = dict[word_id];
+    std::string::size_type word_len = word.size();
 
-  if(word_len<=len)
-	return;
+    if (word_len <= len) {
+        return;
+    }
 
-  if(is_prefix) 
-	words.insert(dict.insert(word.substr(0,len)+"~~"));
-  else
-	words.insert(dict.insert("~~"+word.substr(word_len-len,len)));
+    if (is_prefix) {
+        words.insert(dict.insert(word.substr(0, len) + "~~"));
+    }
+    else {
+        words.insert(dict.insert("~~" + word.substr(word_len - len, len)));
+    }
 }
 
 #endif

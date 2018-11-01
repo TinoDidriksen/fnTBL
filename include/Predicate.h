@@ -37,20 +37,7 @@
 #include <vector>
 
 #include <functional>
-
-#ifndef HAVE_GCC_VERSION
-#define HAVE_GCC_VERSION(MAJOR, MINOR) \
-  (__GNUC__ > (MAJOR) || (__GNUC__ == (MAJOR) && __GNUC_MINOR__ >= (MINOR)))
-#endif
-
-
-#if HAVE_GCC_VERSION(3,1)
-#include <ext/numeric>
-#include <memory>
-#else
 #include <numeric>
-#include "mmemory"
-#endif
 
 #include "bit_vector.h"
 // A predicate template is a predicate having the features uninstantiated.
@@ -60,266 +47,280 @@
 
 class PredicateTemplate {
 public:
-  typedef vector<string> string_vector;
-  typedef vector<PredicateTemplate> PredicateTemplate_vector;
-  typedef AtomicPredicate* ptest_type;
-  typedef vector<ptest_type> test_vector_type;
-  typedef PredicateTemplate self;
+    using string_vector = std::vector<std::string>;
+    using PredicateTemplate_vector = std::vector<PredicateTemplate>;
+    using ptest_type = AtomicPredicate*;
+    using test_vector_type = std::vector<ptest_type>;
+    using self = PredicateTemplate;
 
-  PredicateTemplate(): tests(0), dependencies(0) {}
-  PredicateTemplate(const vector<string>& pred_features);
+    PredicateTemplate()
+      : tests(0)
+      , dependencies(0) {}
+    PredicateTemplate(const std::vector<std::string>& ls);
 
-  PredicateTemplate(const PredicateTemplate& pt): tests(pt.tests) {
-  }
-  
-  ~PredicateTemplate() {}
+    PredicateTemplate(const PredicateTemplate& pt)
+      : tests(pt.tests) {
+    }
 
-  void deallocate() {
-    for(test_vector_type::iterator it=tests.begin() ; it!=tests.end() ; ++it)
-      delete *it;
-  }
+    ~PredicateTemplate() = default;
 
-  static Dictionary name_map;
-  static string_vector TemplateNames;
-  static PredicateTemplate_vector Templates;
-  static HASH_NAMESPACE::hash_map<string, string> variables;
+    void deallocate() {
+        for (auto& test : tests) {
+            delete test;
+        }
+    }
 
-  static relativePosType MaxBackwardLookup, MaxForwardLookup; // 
+    static Dictionary name_map;
+    static string_vector TemplateNames;
+    static PredicateTemplate_vector Templates;
+    static HASH_NAMESPACE::hash_map<std::string, std::string> variables;
 
-  static void Initialize();
-  const AtomicPredicate& operator[] (int i) const {
-    return *tests[i];
-  }
+    static relativePosType MaxBackwardLookup, MaxForwardLookup; //
 
-  void instantiate(const wordType2D& corpus, int sample_ind, wordType2DVector& instances) const;
-  void identify_strings(wordType word_id, wordType_set& wrds) const;
-  void identify_strings(const wordType1D& word_id, wordType_set& wrds) const;
+    static void Initialize();
+    const AtomicPredicate& operator[](int i) const {
+        return *tests[i];
+    }
 
-  static int FindTemplate(const string& t_name) {
-    string_vector::iterator i = find(TemplateNames.begin(), TemplateNames.end(), t_name);
-    if (i==TemplateNames.end())
-      return -1;
-    else
-      return distance(TemplateNames.begin(), i);
-  }
+    void instantiate(const wordType2D& corpus, int sample_ind, wordType2DVector& instances) const;
+    void identify_strings(wordType word_id, wordType_set& words) const;
+    void identify_strings(const wordType1D& word_id, wordType_set& words) const;
 
-  void set_dependencies() {
-    static short int feature_set_size = PredicateTemplate::name_map.size()-1;
-    dependencies.resize(PredicateTemplate::MaxForwardLookup-PredicateTemplate::MaxBackwardLookup+feature_set_size);
-    for(int i=0 ; i<dependencies.size() ; i++)
-      dependencies[i].resize(feature_set_size);
+    static int FindTemplate(const std::string& t_name) {
+        auto i = find(TemplateNames.begin(), TemplateNames.end(), t_name);
+        if (i == TemplateNames.end()) {
+            return -1;
+        }
+        return distance(TemplateNames.begin(), i);
+    }
 
-    for(test_vector_type::iterator ap = tests.begin() ; ap!=tests.end() ; ++ap)
-      (*ap)->set_dependencies(dependencies);
-  }
+    void set_dependencies() {
+        static short int feature_set_size = PredicateTemplate::name_map.size() - 1;
+        dependencies.resize(PredicateTemplate::MaxForwardLookup - PredicateTemplate::MaxBackwardLookup + feature_set_size);
+        for (auto& dependencie : dependencies) {
+            dependencie.resize(feature_set_size);
+        }
 
-  // This method returns true if the predicate template depends on
-  // the specified position.
-  bool depends_on(relativePosType position, featureIndexType feature) const {
-    return dependencies[position-MaxBackwardLookup][feature];
-  }
+        for (auto& test : tests) {
+            test->set_dependencies(dependencies);
+        }
+    }
 
-  bool depends_on(relativePosType position, featureIndexType1D& features) const {
-    for(int i=0 ; i<features.size() ; i++)
-      if(dependencies[position-MaxBackwardLookup][features[i]])
-	return true;
-    return false;
-  }
+    // This method returns true if the predicate template depends on
+    // the specified position.
+    bool depends_on(relativePosType position, featureIndexType feature) const {
+        return dependencies[position - MaxBackwardLookup][feature];
+    }
 
-  void swap(self& t) {
-    tests.swap(t.tests);
-    dependencies.swap(t.dependencies);
-  }
+    bool depends_on(relativePosType position, featureIndexType1D& features) const {
+        for (unsigned char feature : features) {
+            if (dependencies[position - MaxBackwardLookup][feature]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void swap(self& t) {
+        tests.swap(t.tests);
+        dependencies.swap(t.dependencies);
+    }
 
 public:
-  test_vector_type tests;
-  vector<bit_vector> dependencies;
+    test_vector_type tests;
+    std::vector<bit_vector> dependencies;
 };
 
 // Each predicate has an attached template and an associated vector of values.
 class Predicate {
 public:
-  typedef unsigned char order_rep_type;
-  typedef svector<wordType> token_vector_type;
+    using order_rep_type = unsigned char;
+    using token_vector_type = svector<wordType>;
 
-  Predicate(string1D &ruleComponents) {
-    create_from_words(ruleComponents);
-  }
+    Predicate(string1D& ruleComponents) {
+        create_from_words(ruleComponents);
+    }
 
-  Predicate(int tid, const wordType1D& tok): template_id(tid){
-    static int feature_set_size = PredicateTemplate::name_map.size();
-    tokens.resize(feature_set_size);
-    copy(tok, tok+feature_set_size, tokens.begin());
+    Predicate(int tid, const wordType1D& tok)
+      : template_id(tid) {
+        static int feature_set_size = PredicateTemplate::name_map.size();
+        tokens.resize(feature_set_size);
+        std::copy(tok, tok + feature_set_size, tokens.begin());
 
-    create_order();
+        create_order();
 
-    hashIndex = hashVal();
-  }
+        hashIndex = hashVal();
+    }
 
-  Predicate(int tid, const wordTypeVector& tok): template_id(tid), tokens(tok){
-    create_order();
-    hashIndex = hashVal();
-  }
+    Predicate(int tid, const wordTypeVector& tok)
+      : template_id(tid)
+      , tokens(tok) {
+        create_order();
+        hashIndex = hashVal();
+    }
 
-  Predicate(const Predicate& p): 
-    template_id(p.template_id), 
-    hashIndex(p.hashIndex), 
-    tokens(p.tokens) 
-  {
-    allocate_order();
-    copy(p.order, p.order+tokens.size(), order);
-  }
+    Predicate(const Predicate& p)
+      : template_id(p.template_id)
+      , hashIndex(p.hashIndex)
+      , tokens(p.tokens) {
+        allocate_order();
+        std::copy(p.order, p.order + tokens.size(), order);
+    }
 
-  Predicate():
-    template_id(-1),
-    hashIndex(0),
-    tokens(0),
-    order(0)
-  {}
+    Predicate()
+      :
 
-  ~Predicate() {
-    free_order();
-    order = 0;
-  }
+      tokens(0)
 
-  void create_from_words(string1D& words);
+    {}
 
-  void create_order() {
-    static Dictionary& dict = Dictionary::GetDictionary();
-    int sz = tokens.size();
+    ~Predicate() {
+        free_order();
+        order = nullptr;
+    }
 
-    static vector<int> counts;
+    void create_from_words(string1D& ruleComponents);
 
-    counts.resize(sz);
-    // 	counts.clear();
+    void create_order() {
+        static Dictionary& dict = Dictionary::GetDictionary();
+        int sz = tokens.size();
 
-    for(int i=0 ; i<sz ; i++)
-      counts[i] = dict.getCounts(tokens[i]);
+        static std::vector<int> counts;
 
-    allocate_order();
+        counts.resize(sz);
+        // 	counts.clear();
 
+        for (int i = 0; i < sz; i++) {
+            counts[i] = dict.getCounts(tokens[i]);
+        }
 
-#if HAVE_GCC_VERSION(3,1)
-    __gnu_cxx::iota(order, order+tokens.size(), 0);
-#else 
-    iota(order, order+tokens.size(), 0);
-#endif
+        allocate_order();
 
-    std::sort(order, order+tokens.size(), Sorter(counts));
-  }
+        std::iota(order, order + tokens.size(), 0);
+        std::sort(order, order + tokens.size(), Sorter(counts));
+    }
 
 public:
-  short int template_id;
-  int hashIndex;
-  token_vector_type tokens; 
-  order_rep_type* order;
+    short int template_id{ -1 };
+    int hashIndex{ 0 };
+    token_vector_type tokens;
+    order_rep_type* order{ nullptr };
 
 public:
-  int hashVal() {
-    int value = 0;
-    for (token_vector_type::iterator tok = tokens.begin(); tok != tokens.end(); ++tok)
-      value = 5*value + (*tok);
+    int hashVal() {
+        int value = 0;
+        for (unsigned int& token : tokens) {
+            value = 5 * value + token;
+        }
 
-    return 5*value + template_id;
-  }
-
-  string printMe() const {
-    const PredicateTemplate& templ = PredicateTemplate::Templates[template_id];
-
-    token_vector_type::const_iterator token = tokens.begin();
-    string str = templ[0].printMe(*token);
-    int i=1;
-    for (++token ; token != tokens.end() ; ++token, ++i) {
-      str += " " + templ[i].printMe(*token);
+        return 5 * value + template_id;
     }
-    return str;
-  }
-	
-  bool test(const wordType2D &corpus, int word) const;
 
-  double test(const wordType2D&, int word, const float2D& context_prob) const;
-  
-  bool operator == (const Predicate& pred) const {
-    if(template_id != pred.template_id || tokens.size() != pred.tokens.size())
-      return false;
+    std::string printMe() const {
+        const PredicateTemplate& templ = PredicateTemplate::Templates[template_id];
 
-    int sz = tokens.size();
-    for (order_rep_type* i=order ; i!=order+sz ; ++i)
-      if (tokens[*i] != pred.tokens[*i])
-	return false;
-	
-    return true;
-  }
-
-  Predicate& operator= (const Predicate& pred) {
-    if (this != &pred) {
-      hashIndex = pred.hashIndex;
-      template_id = pred.template_id;
-      free_order();
-      tokens = pred.tokens;
-      allocate_order();
-      copy(pred.order, pred.order+tokens.size(), order);
+        token_vector_type::const_iterator token = tokens.begin();
+        std::string str = templ[0].printMe(*token);
+        int i = 1;
+        for (++token; token != tokens.end(); ++token, ++i) {
+            str += " " + templ[i].printMe(*token);
+        }
+        return str;
     }
-    return *this;
-  }
 
-  struct Sorter 
-  {
-    const int1D &counts;
-    Sorter(const int1D &myCounts):counts(myCounts){}
-    bool operator()(int a, int b) {
-      return counts[a] < counts[b];
+    bool test(const wordType2D& corpus, int word) const;
+
+    double test(const wordType2D& /*corpus*/, int word, const float2D& context_prob) const;
+
+    bool operator==(const Predicate& pred) const {
+        if (template_id != pred.template_id || tokens.size() != pred.tokens.size()) {
+            return false;
+        }
+
+        int sz = tokens.size();
+        for (order_rep_type* i = order; i != order + sz; ++i) {
+            if (tokens[*i] != pred.tokens[*i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
-  };
 
-  static void deallocate_all() {
-    memory_pool.destroy();
-  }
-  
-  static void clear_memory() {
-    memory_pool.dump();
-  }
+    Predicate& operator=(const Predicate& pred) {
+        if (this != &pred) {
+            hashIndex = pred.hashIndex;
+            template_id = pred.template_id;
+            free_order();
+            tokens = pred.tokens;
+            allocate_order();
+            std::copy(pred.order, pred.order + tokens.size(), order);
+        }
+        return *this;
+    }
 
-  int get_least_frequent_feature_position() const {
-    PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
+    struct Sorter {
+        const int1D& counts;
+        Sorter(const int1D& myCounts)
+          : counts(myCounts) {}
+        bool operator()(int a, int b) {
+            return counts[a] < counts[b];
+        }
+    };
 
-    for(int k=0 ; k<tokens.size() ; ++k)
-      if(pred_template.tests[order[k]]->is_indexable())
-	return order[k];
+    static void deallocate_all() {
+        memory_pool.destroy();
+    }
 
-    return -1;
-  }
+    static void clear_memory() {
+        memory_pool.dump();
+    }
+
+    int get_least_frequent_feature_position() const {
+        PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
+
+        for (int k = 0; k < tokens.size(); ++k) {
+            if (pred_template.tests[order[k]]->is_indexable()) {
+                return order[k];
+            }
+        }
+
+        return -1;
+    }
 
 protected:
-  static sized_memory_pool<order_rep_type> memory_pool;
+    static sized_memory_pool<order_rep_type> memory_pool;
 
-  void allocate_order() {
-    order = memory_pool.allocate(tokens.size());
-  }
+    void allocate_order() {
+        order = memory_pool.allocate(tokens.size());
+    }
 
-  void free_order() {
-    memory_pool.deallocate(order, tokens.size());
-  }
+    void free_order() {
+        memory_pool.deallocate(order, tokens.size());
+    }
 };
 
 inline bool Predicate::test(const wordType2D& corpus, int word) const {
-  PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
-  int sz = tokens.size();
-  for(order_rep_type* feature=order ; feature!=order+sz ; ++feature)
-    if(! pred_template[*feature].test(corpus, word, tokens[*feature]))
-      return false;
+    PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
+    int sz = tokens.size();
+    for (order_rep_type* feature = order; feature != order + sz; ++feature) {
+        if (!pred_template[*feature].test(corpus, word, tokens[*feature])) {
+            return false;
+        }
+    }
 
-  return true;
+    return true;
 }
 
 inline double Predicate::test(const wordType2D& corpus, int word, const float2D& context_prob) const {
-  PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
-  double prob = 1;
-  int sz = tokens.size();
-  for(order_rep_type* feature=order ; feature != order+sz ; ++feature)
-    prob *= pred_template[*feature].test(corpus, word, tokens[*feature], context_prob);
+    PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
+    double prob = 1;
+    int sz = tokens.size();
+    for (order_rep_type* feature = order; feature != order + sz; ++feature) {
+        prob *= pred_template[*feature].test(corpus, word, tokens[*feature], context_prob);
+    }
 
-  return prob;
+    return prob;
 }
 
 #endif

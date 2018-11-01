@@ -28,9 +28,9 @@
 #define _debug_h_
 
 #if DEBUG >= 3
-#define ON_DEBUG(x) x
+#    define ON_DEBUG(x) x
 #else
-#define ON_DEBUG(x)
+#    define ON_DEBUG(x)
 #endif
 
 #endif

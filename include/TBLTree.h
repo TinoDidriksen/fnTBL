@@ -37,91 +37,92 @@
 
 class TBLTree {
 public:
-  typedef Node* PNode;
-  typedef TBLTree self;
-  typedef std::vector<PNode> pnode_vector;
-  typedef pnode_vector::iterator frontier_iterator;
-  typedef pnode_vector::const_iterator frontier_const_iterator;
-  typedef HASH_NAMESPACE::hash_map<Rule,int> rule_map_type;
-  typedef Node::example_index example_index;
-  
-  TBLTree() {
-    root = new Node;
-  }
+    using PNode = Node*;
+    using self = TBLTree;
+    using pnode_vector = std::vector<PNode>;
+    using frontier_iterator = pnode_vector::iterator;
+    using frontier_const_iterator = pnode_vector::const_iterator;
+    using rule_map_type = HASH_NAMESPACE::hash_map<Rule, int>;
+    using example_index = Node::example_index;
 
-  TBLTree(const string& file);
+    TBLTree() {
+        root = new Node;
+    }
 
-  void readInTextFormat(const string& file);
-  void readClasses(const string& file);
+    TBLTree(const std::string& file);
 
-  frontier_iterator frontier_begin() {
-    return frontier1.begin();
-  }
+    void readInTextFormat(const std::string& file);
+    void readClasses(const std::string& file);
 
-  frontier_iterator frontier_end() {
-    return frontier1.end();
-  }
+    frontier_iterator frontier_begin() {
+        return frontier1.begin();
+    }
 
-  frontier_const_iterator frontier_begin() const {
-    return frontier1.begin();
-  }
+    frontier_iterator frontier_end() {
+        return frontier1.end();
+    }
 
-  frontier_const_iterator frontier_end() const {
-    return frontier1.end();
-  }
+    frontier_const_iterator frontier_begin() const {
+        return frontier1.begin();
+    }
 
-  void move_to_next_level() {
-    frontier1.swap(frontier2);
-    frontier2.clear();
-  }
+    frontier_const_iterator frontier_end() const {
+        return frontier1.end();
+    }
 
-  void push_node_in_frontier(Node* p) {
-    frontier2.push_back(p);
-  }
-  
-  const Node* findClassOfSample(const example_index& example) const { 
-    return root->findClassOfSample(example);
-  }
+    void move_to_next_level() {
+        frontier1.swap(frontier2);
+        frontier2.clear();
+    }
 
-  void updateCounts() {
-    root->updateCounts();
-  }
+    void push_node_in_frontier(Node* p) {
+        frontier2.push_back(p);
+    }
 
-  void computeProbs(const example_index& example, const float2D& hypothesis) {
-    root->computeProbs(example, hypothesis);
-  }
+    const Node* findClassOfSample(const example_index& example) const {
+        return root->findClassOfSample(example);
+    }
 
-  void initialize(const vector<Rule>& rules);
+    void updateCounts() {
+        root->updateCounts();
+    }
 
-  const float1D& probs() const {
-    return root->probs;
-  }
+    void computeProbs(const example_index& example, const float2D& hypothesis) {
+        root->computeProbs(example, hypothesis);
+    }
 
-  void construct_tree();
-  void gather_leaves();
+    void initialize(const std::vector<Rule>& rules);
 
-  friend ostream& operator << (ostream& ostr, const self&);
-  friend istream& operator >> (istream& istr, self&);
+    const float1D& probs() const {
+        return root->probs;
+    }
 
-  static int GetRuleIndex(const Rule& rule) {
-    rule_map_type::iterator i = rule_index.find(rule);
-    int index;
-    if(i==rule_index.end()) {
-      index = rule_index[rule] = rules.size();
-      rules.push_back(rule);
-    } else 
-      index = i->second;
+    void construct_tree();
+    void gather_leaves();
 
-    return index;
-  }
+    friend std::ostream& operator<<(std::ostream& ostr, const self& /*tree*/);
+    friend std::istream& operator>>(std::istream& istr, self& /*tree*/);
+
+    static int GetRuleIndex(const Rule& rule) {
+        rule_map_type::iterator i = rule_index.find(rule);
+        int index;
+        if (i == rule_index.end()) {
+            index = rule_index[rule] = rules.size();
+            rules.push_back(rule);
+        }
+        else
+            index = i->second;
+
+        return index;
+    }
 
 protected:
-  Node * root;
-  pnode_vector frontier1, frontier2;
+    Node* root;
+    pnode_vector frontier1, frontier2;
 
 public:
-  static vector<Rule> rules;
-  static rule_map_type rule_index;
+    static std::vector<Rule> rules;
+    static rule_map_type rule_index;
 };
 
 #endif

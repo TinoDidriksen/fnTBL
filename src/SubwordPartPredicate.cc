@@ -30,27 +30,27 @@
 SubwordPartPredicate::rep_vector SubwordPartPredicate::feature_len_pair_list;
 
 void SubwordPartPredicate::Initialize(int size, word_list_rep_type& feature_lookup, bool2D& seen) {
-  char sn[20];
-  fill(sn, sn+20, 0);
-  for(rep_vector::iterator i=feature_len_pair_list.begin() ; 
-	  i!=feature_len_pair_list.end() ; 
-	  ++i) {
-	sn[static_cast<unsigned>(i->second)] = 1;
-  }
+    char sn[20];
+    std::fill(sn, sn + 20, 0);
+    for (auto& i : feature_len_pair_list) {
+        sn[static_cast<unsigned>(i.second)] = 1;
+    }
 
-  int max = 0;
-  for(int i=0 ; i<20 ; i++)
-	if(sn[i]!=0)
-	  max = i;
+    int max = 0;
+    for (int i = 0; i < 20; i++) {
+        if (sn[i] != 0) {
+            max = i;
+        }
+    }
 
-  feature_lookup.resize(max);
-  for(int i=0 ; i<max ; i++)
-	feature_lookup[i].resize(size);
+    feature_lookup.resize(max);
+    for (int i = 0; i < max; i++) {
+        feature_lookup[i].resize(size);
+    }
 
-  seen.resize(max);
-  for(int i=0 ; i<max ; i++) {
-	seen[i].resize(size);
-	fill(seen[i].begin(), seen[i].end(), false);
-  }
+    seen.resize(max);
+    for (int i = 0; i < max; i++) {
+        seen[i].resize(size);
+        fill(seen[i].begin(), seen[i].end(), false);
+    }
 }
-

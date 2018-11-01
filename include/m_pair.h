@@ -1,4 +1,4 @@
-// -*- C++ -*- 
+// -*- C++ -*-
 /*
   This file is part of the fnTBL distribution.
 
@@ -23,29 +23,31 @@
   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 */
-  
+
 #ifndef __my_pair_h_
 #define __my_pair_h_
 
-#if __GNUG__ < 3
-#include <pair.h>
-#else
-#include <bits/stl_pair.h>
-#endif
+#include <utility>
 
 template<class T1, class T2>
 struct m_pair {
-  typedef T1 first_type;
-  typedef T2 second_type;
+    using first_type = T1;
+    using second_type = T2;
 
-  T1 first;
-  T2 second;
-  m_pair() : first(T1()), second(T2()) {}
-  m_pair(const T1 a, const T2 b) : first(a), second(b) {}
+    T1 first;
+    T2 second;
+    m_pair()
+      : first(T1())
+      , second(T2()) {}
+    m_pair(const T1 a, const T2 b)
+      : first(a)
+      , second(b) {}
 
 #ifdef __STL_MEMBER_TEMPLATES
-  template <class U1, class U2>
-  m_pair(const m_pair<U1, U2>& p) : first(p.first), second(p.second) {}
+    template<class U1, class U2>
+    m_pair(const m_pair<U1, U2>& p)
+      : first(p.first)
+      , second(p.second) {}
 
 //   pair<T1, T2> operator pair<T1, T2> () {
 // 	return make_pair(first, second);
@@ -53,20 +55,19 @@ struct m_pair {
 #endif
 };
 
-template <class T1, class T2>
-inline bool operator==(const m_pair<T1, T2>& x, const m_pair<T1, T2>& y) { 
-  return x.first == y.first && x.second == y.second; 
+template<class T1, class T2>
+inline bool operator==(const m_pair<T1, T2>& x, const m_pair<T1, T2>& y) {
+    return x.first == y.first && x.second == y.second;
 }
 
-template <class T1, class T2>
-inline bool operator<(const m_pair<T1, T2>& x, const m_pair<T1, T2>& y) { 
-  return x.first < y.first || (!(y.first < x.first) && x.second < y.second); 
+template<class T1, class T2>
+inline bool operator<(const m_pair<T1, T2>& x, const m_pair<T1, T2>& y) {
+    return x.first < y.first || (!(y.first < x.first) && x.second < y.second);
 }
 
-template <class T1, class T2>
+template<class T1, class T2>
 inline m_pair<T1, T2> make_m_pair(const T1 x, const T2 y) {
-  return m_pair<T1, T2>(x, y);
+    return m_pair<T1, T2>(x, y);
 }
 
 #endif
-

@@ -28,73 +28,59 @@
 #define _NULL_STRING_LOCAL
 #include "common.h"
 #include <cstdio>
+#include <string>
 
-using namespace std;
-
-int getline(istream& istr, string& line) {
-  static char temp[1000000];
-  
-  if(! istr.getline(temp, 1000000))
-    return 0;
-  line = temp;
-  return 1;
+int IsBlank(const std::string& s) {
+    for (unsigned i = 0; i < s.length() && s[i] != '\n'; i++) {
+        if (s[i] != ' ' && s[i] != '\t') {
+            return 0;
+        }
+    }
+    return 1;
 }
 
-int IsBlank(const string& s) {
-  for(unsigned i=0 ; i<s.length() && s[i] != '\n'; i++) 
-    if(s[i] != ' ' && s[i] != '\t')
-      return 0;
-  return 1;
+const std::string& ftoa(double f, const std::string& format) {
+    static std::string r("                                                    ");
+    char s[30];
+    sprintf(s, format.c_str(), f);
+    r = s;
+    return r;
 }
 
-string itoa(int no) {
-  static char s[20];
-
-  sprintf(s, "%d", no);
-  return s;
+int atoi1(const std::string& number) {
+    return atoi(number.c_str());
 }
 
-const string& ftoa(double f, const string& format) {
-  static string r("                                                    ");
-  char s[30];
-  sprintf(s, format.c_str(), f);
-  r = s;
-  return r;
-}
-
-int atoi1(const string& number) {
-  return atoi(number.c_str());
-}
-
-double atof1(const string& number) {
-  return atof(number.c_str());
+double atof1(const std::string& number) {
+    return atof(number.c_str());
 }
 
 #include "Params.h"
-#include <time.h>
-void log_me_in(int argc, char * argv[]) {
-  const Params& par = Params::GetParams();
+#include <ctime>
+void log_me_in(int argc, char* argv[]) {
+    const Params& par = Params::GetParams();
 #ifdef DEBUG
-  ofstream log_file((par["LOGFILE"]+".debug").c_str(), ios::app);
+    std::ofstream log_file((par["LOGFILE"] + ".debug").c_str(), std::ios::app);
 #else
-  ofstream log_file(par["LOGFILE"].c_str(), ios::app);
-#endif  
+    std::ofstream log_file(par["LOGFILE"].c_str(), std::ios::app);
+#endif
 
-  time_t curtime;
-  struct tm *loctime;
-  char  buffer[2000];
-  /* Get the current time. */
-  curtime = time (NULL);  
+    time_t curtime;
+    struct tm* loctime;
+    char buffer[2000];
+    /* Get the current time. */
+    curtime = time(nullptr);
 
-  /* Convert it to local time representation. */
-  loctime = localtime (&curtime);
-  
-  /* Print it out in a nice format. */
-  strftime (buffer, 2000, "%A, %B %d %Y, %H:%M:%S", loctime);
-  log_file << buffer << "  ";
-  
-  for(int i=0 ; i<argc ; i++)
-    log_file << argv[i] << " ";
-  log_file << endl;
-  log_file.close();
+    /* Convert it to local time representation. */
+    loctime = localtime(&curtime);
+
+    /* Print it out in a nice format. */
+    strftime(buffer, 2000, "%A, %B %d %Y, %H:%M:%S", loctime);
+    log_file << buffer << "  ";
+
+    for (int i = 0; i < argc; i++) {
+        log_file << argv[i] << " ";
+    }
+    log_file << std::endl;
+    log_file.close();
 }

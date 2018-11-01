@@ -28,103 +28,120 @@
 #include "Dictionary.h"
 #include "common.h"
 #include "line_splitter.h"
-#if __GNUC__ > 3
-#include <ext/numeric>
-using namespace __gnu_cxx;
-#else
+#include "Params.h"
 #include <numeric>
-#endif
-
-using namespace std;
 
 int Dictionary::num_classes = 0;
 
-const string& Dictionary::getString(wordType index) const {
-  if (index >= word_index.size() || index==unknown_index) {
-    was_unknown = true;
-    return spelling_of_unknown;
-  }
-  was_unknown = false;
-  return word_index[index];
+const std::string& Dictionary::getString(wordType index) const {
+    if (index >= word_index.size() || index == unknown_index) {
+        was_unknown = true;
+        return spelling_of_unknown;
+    }
+    was_unknown = false;
+    return word_index[index];
 }
 
 int Dictionary::getCounts(wordType index) {
-  if (index >= (int)word_index.size())
-    return 0;
-  return word_counts[index];
+    if (index >= static_cast<int>(word_index.size())) {
+        return 0;
+    }
+    return word_counts[index];
 }
 
-wordType Dictionary::getIndex(const string& word) const {
-  int ind = word_index[word];
-  if (ind == word_index.fake_index) {
-    was_unknown = true;
-    return unknown_index;
-  } else {
+wordType Dictionary::getIndex(const std::string& word) const {
+    int ind = word_index[word];
+    if (ind == word_index.fake_index) {
+        was_unknown = true;
+        return unknown_index;
+    }
     was_unknown = false;
     return ind;
-  }
 }
 
-wordType Dictionary::getIndex(const string& word) {
-  wordType i=word_index[word];
+wordType Dictionary::getIndex(const std::string& word) {
+    wordType i = word_index[word];
 
-  if(i == word_index.fake_index) {
-    was_unknown = true;
-    return word_index.insert(word);
-  } 
-  else {
+    if (i == word_index.fake_index) {
+        was_unknown = true;
+        return word_index.insert(word);
+    }
+
     was_unknown = false;
     return i;
-  }
 }
 
-wordType Dictionary::increaseCount(const string& word, unsigned int count) {
-  wordType index = getIndex(word);
-  word_counts[index] += count;
-  return index;
+wordType Dictionary::increaseCount(const std::string& word, unsigned int count) {
+    wordType index = getIndex(word);
+    word_counts[index] += count;
+    return index;
 }
 
 wordType Dictionary::increaseCount(int index, unsigned int count) {
-  word_counts[index] += count;
-  return index;
+    word_counts[index] += count;
+    return index;
 }
 
-void Dictionary::writeToFile(const string& file) const {
-  ostream* ostr;
-  smart_open(ostr, file);
-  *ostr << "#real_word_indices: " << _real_word_start_index << " " << _real_word_end_index << endl;
-  *ostr << "#number_of_classes: " << num_classes << endl;
-  for(const_iterator i = begin() ; i!= end() ; ++i)
-    *ostr << *i << endl;
-  delete ostr;
-}
-
-void Dictionary::readFromFile(const string& file) {
-  istream* istr;
-  smart_open(istr, file);
-  string line;
-  line_splitter ls;
-
-  while (istr->peek() == ('#')) {
-    getline(*istr, line);
-    ls.split(line);
-    if (ls[0] == "#") {
-      insert(line);
-      break;
+void Dictionary::writeToFile(const std::string& file) const {
+    std::ostream* ostr;
+    smart_open(ostr, file);
+    *ostr << "#real_word_indices: " << _real_word_start_index << " " << _real_word_end_index << std::endl;
+    *ostr << "#number_of_classes: " << num_classes << std::endl;
+    for (const auto& i : *this) {
+        *ostr << i << std::endl;
     }
-    if(ls[0] == "#real_word_indices:") {
-      _real_word_start_index = atoi1(ls[1]);
-      _real_word_end_index = atoi1(ls[2]);
-    } 
-    else if(ls[0] == "#number_of_classes:")
-      num_classes = atoi1(ls[1]);
-    else
-      cerr << "Unknown meta directive in the vocabulary file: " << ls[0] << "!!" << endl;
-  }
+    delete ostr;
+}
 
-  while (getline(*istr, line)) {
-    insert(line);
-  }
+void Dictionary::readFromFile(const std::string& file) {
+    std::istream* istr;
+    try {
+        // Open as-is
+        smart_open(istr, file);
+    }
+    catch (...) {
+        // ...if that fails, open filename relative to cwd
+        std::string nf{ file };
+        size_t off = 0;
+        if ((off = file.find_last_of("\\/")) != std::string::npos) {
+            nf = file.substr(off + 1);
+        }
 
-  delete istr;
+        try {
+            smart_open(istr, nf);
+        }
+        catch (...) {
+            // ...if that also fails, prepend _REL_PATH
+            nf = Params::GetParams()["_REL_PATH"] + nf;
+            smart_open(istr, nf);
+        }
+    }
+
+    std::string line;
+    line_splitter ls;
+
+    while (istr->peek() == ('#')) {
+        getline(*istr, line);
+        ls.split(line);
+        if (ls[0] == "#") {
+            insert(line);
+            break;
+        }
+        if (ls[0] == "#real_word_indices:") {
+            _real_word_start_index = atoi1(ls[1]);
+            _real_word_end_index = atoi1(ls[2]);
+        }
+        else if (ls[0] == "#number_of_classes:") {
+            num_classes = atoi1(ls[1]);
+        }
+        else {
+            std::cerr << "Unknown meta directive in the vocabulary file: " << ls[0] << "!!" << std::endl;
+        }
+    }
+
+    while (std::getline(*istr, line)) {
+        insert(line);
+    }
+
+    delete istr;
 }

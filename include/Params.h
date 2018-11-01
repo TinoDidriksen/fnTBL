@@ -30,7 +30,7 @@
 #ifndef _Params_h_
 #define _Params_h_
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <iostream>
 #include <fstream>
@@ -39,89 +39,92 @@
 #include "hash_wrapper.h"
 
 class Params {
-  typedef HASH_NAMESPACE::hash_map<std::string, std::string> rep_type;
-  typedef rep_type::iterator iterator;
-  typedef rep_type::const_iterator const_iterator;
+    using rep_type = HASH_NAMESPACE::hash_map<std::string, std::string>;
+    using iterator = rep_type::iterator;
+    using const_iterator = rep_type::const_iterator;
 
-  rep_type commands;
-  static std::string * nullStr;
-  static std::string filename;
+    rep_type commands;
+    static std::string* nullStr;
+    static std::string filename;
 
 public:
-  Params(const char * str = getenv("DDINF"));
+    Params(const char* filename = getenv("DDINF"));
 
-  inline const std::string& operator[] (std::string param) const {
-    const_iterator i = commands.find(param);
-    if(i == commands.end())
-      return *nullStr;
-    return (*i).second;
-  }
-
-  const std::string& valueForParameter(std::string param) const {
-    const_iterator i = commands.find(param);
-    if(i == commands.end()) {
-      std::cerr << "The parameter " << param << " is not defined in the parameters file ($DDINF)! Exiting.." << std::endl;
-      exit(1);
+    inline const std::string& operator[](std::string param) const {
+        auto i = commands.find(param);
+        if (i == commands.end()) {
+            return *nullStr;
+        }
+        return (*i).second;
     }
-    return (*i).second;
-  }
 
-  const std::string valueForParameter(std::string param, std::string default_value) const {
-    const_iterator i = commands.find(param);
-    if(i == commands.end())
-      return default_value;
-    else
-      return (*i).second;
-  }
+    const std::string& valueForParameter(std::string param) const {
+        auto i = commands.find(param);
+        if (i == commands.end()) {
+            std::cerr << "The parameter " << param << " is not defined in the parameters file ($DDINF)! Exiting.." << std::endl;
+            exit(1);
+        }
+        return (*i).second;
+    }
 
-  template <class Type>
-  Type valueForParameter(std::string param, Type default_value) const {
-    const_iterator i=commands.find(param);
-    if(i==commands.end())
-      return default_value;
-    else
-      return static_cast<Type>(atoi1(i->second));
-  }
+    const std::string valueForParameter(std::string param, std::string default_value) const {
+        auto i = commands.find(param);
+        if (i == commands.end()) {
+            return default_value;
+        }
+        return (*i).second;
+    }
 
-  iterator begin() {
-    return commands.begin();
-  }
+    template<class Type>
+    Type valueForParameter(std::string param, Type default_value) const {
+        auto i = commands.find(param);
+        if (i == commands.end()) {
+            return default_value;
+        }
+        return static_cast<Type>(atoi1(i->second));
+    }
 
-  const_iterator begin() const {
-    return commands.begin();
-  }
+    iterator begin() {
+        return commands.begin();
+    }
 
-  iterator end() {
-    return commands.end();
-  }
+    const_iterator begin() const {
+        return commands.begin();
+    }
 
-  const_iterator end() const {
-    return commands.end();
-  }
+    iterator end() {
+        return commands.end();
+    }
 
-  static void Initialize(const std::string& fn = "") {
-    if (fn == "") {
-      char *str = getenv("DDINF");
-	  
-      if(str == 0) {
-	std::cerr << "No parameter file was given and the shell variable DDINF is not set up! Exiting.." << std::endl;
-	exit(1);
-      }
-      filename = str;
-    } 
-    else
-      filename = fn;
-    nullStr = new std::string("");
-  }
+    const_iterator end() const {
+        return commands.end();
+    }
 
-  static const Params& GetParams() {
-    if (filename=="")
-      Initialize();
-    static Params p(filename.c_str());
-	
-    return p;
-  }
-  
-  friend std::ostream& operator << (std::ostream&, const Params&);
+    static void Initialize(const std::string& fn = "") {
+        if (fn.empty()) {
+            char* str = getenv("DDINF");
+
+            if (str == nullptr) {
+                std::cerr << "No parameter file was given and the shell variable DDINF is not set up! Exiting.." << std::endl;
+                exit(1);
+            }
+            filename = str;
+        }
+        else {
+            filename = fn;
+        }
+        nullStr = new std::string("");
+    }
+
+    static const Params& GetParams() {
+        if (filename.empty()) {
+            Initialize();
+        }
+        static Params p(filename.c_str());
+
+        return p;
+    }
+
+    friend std::ostream& operator<<(std::ostream& /*ostr*/, const Params& /*p*/);
 };
 #endif

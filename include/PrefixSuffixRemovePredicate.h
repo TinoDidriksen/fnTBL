@@ -42,126 +42,135 @@
 #include "AtomicPredicate.h"
 #include "trie.h"
 
-class PrefixSuffixRemovePredicate: public PrefixSuffixPredicate {
-  typedef PrefixSuffixRemovePredicate self;
-  typedef PrefixSuffixPredicate super;
+class PrefixSuffixRemovePredicate : public PrefixSuffixPredicate {
+    using self = PrefixSuffixRemovePredicate;
+    using super = PrefixSuffixPredicate;
+
 public:
-  PrefixSuffixRemovePredicate(relativePosType sample, storage_type feature, bool is_p=false, char length=1):
-	super(sample, feature, is_p, length) {}
+    PrefixSuffixRemovePredicate(relativePosType sample, storage_type feature, bool is_p = false, char length = 1)
+      : super(sample, feature, is_p, length) {}
 
-  PrefixSuffixRemovePredicate(const self& p): super(p) {}
+    PrefixSuffixRemovePredicate(const self& p) = default;
 
-  virtual ~PrefixSuffixRemovePredicate() {}
+    ~PrefixSuffixRemovePredicate() override = default;
 
-  self& operator= (const self& pred) {
-	super::operator= (pred);
-	return *this;
-  }
+    self& operator=(const self& pred) {
+        super::operator=(pred);
+        return *this;
+    }
 
-  bool test(const wordType2D& corpus, int sample_ind, const wordType value) const {
-	static Dictionary& dict = Dictionary::GetDictionary();
-	const string& xfix = dict[value];
-	ON_DEBUG(
-			 assert (len+2==xfix.size())
-			 );
-	const string& word = dict[corpus[sample_difference+sample_ind][feature_id]];
+    bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
+        static Dictionary& dict = Dictionary::GetDictionary();
+        const std::string& xfix = dict[value];
+        ON_DEBUG(
+          assert(len + 2 == xfix.size()));
+        const std::string& word = dict[corpus[sample_difference + sample_ind][feature_id]];
 
-	int sz = word.size();
-	if(sz<len)
-	  return false;
+        int sz = word.size();
+        if (sz < len) {
+            return false;
+        }
 
-	string::const_iterator p1, p2;
+        std::string::const_iterator p1, p2;
 
-	if(is_prefix) {
-	  p1 = xfix.begin();
-	  p2 = word.begin();
-	}
-	else {
-	  p1 = xfix.end()-len;
-	  p2 = word.end()-len;
-	}
-	
-	unsigned l=0;
-	for( ; l<len ; ++p1,++p2, ++l) 
-	  if(*p1 != *p2)
-		return false;
+        if (is_prefix) {
+            p1 = xfix.begin();
+            p2 = word.begin();
+        }
+        else {
+            p1 = xfix.end() - len;
+            p2 = word.end() - len;
+        }
 
-	return dict.find( is_prefix ? word.substr(len, sz-len) : word.substr(0, sz-len) ) != dict.end();
-// 	return is_prefix ? dict.find(word.substr(len, sz-len)) != dict.end() : dict.find(word.substr(0, sz-len)) != dict.UnknownIndex();
-  }
+        unsigned l = 0;
+        for (; l < len; ++p1, ++p2, ++l) {
+            if (*p1 != *p2) {
+                return false;
+            }
+        }
 
-  virtual string printMe(wordType instance) const {
-	Dictionary& dict = Dictionary::GetDictionary();
-	const string& addition = dict[instance];
-	static string add_size;
-	add_size = itoa(len);
-	if(max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0)
-	  return PredicateTemplate::name_map[feature_id] + "::" + 
-		(is_prefix ? add_size + "--" : "--" + add_size) + "=" + addition;
-	else
-	  return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" + 
-		(is_prefix ? add_size + "--" : "--" + add_size) + "=" + addition;
-  }
+        return dict.find(is_prefix ? word.substr(len, sz - len) : word.substr(0, sz - len)) != dict.end();
+        // 	return is_prefix ? dict.find(word.substr(len, sz-len)) != dict.end() : dict.find(word.substr(0, sz-len)) != dict.UnknownIndex();
+    }
 
-  virtual void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const;
-  virtual void identify_strings(wordType word_id, wordType_set& words) const;
+    std::string printMe(wordType instance) const override {
+        Dictionary& dict = Dictionary::GetDictionary();
+        const std::string& addition = dict[instance];
+        static std::string add_size;
+        add_size = itoa(len);
+        if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
+            return PredicateTemplate::name_map[feature_id] + "::" +
+                   (is_prefix ? add_size + "--" : "--" + add_size) + "=" + addition;
+        }
+        {
+            return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" +
+                   (is_prefix ? add_size + "--" : "--" + add_size) + "=" + addition;
+        }
+    }
+
+    void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const override;
+    void identify_strings(wordType word_id, wordType_set& words) const override;
 };
 
 inline void PrefixSuffixRemovePredicate::instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const {
-  Dictionary& dict = Dictionary::GetDictionary();
-  const string& word = dict[corpus[sample_ind+sample_difference][feature_id]];
-  string::size_type word_len = word.size();
-  if(word_len<=len)
-	return;
+    Dictionary& dict = Dictionary::GetDictionary();
+    const std::string& word = dict[corpus[sample_ind + sample_difference][feature_id]];
+    std::string::size_type word_len = word.size();
+    if (word_len <= len) {
+        return;
+    }
 
-  static string temp, minusminus = "--";
-  if(is_prefix) {
-	temp.assign(word, len, word_len-len);
-	if( dict.find(temp) != dict.end() ) {
-	  temp.assign(word, 0, len);
-	  temp += minusminus;
-	  instances.push_back(dict[temp]);
-	}
-  } else {
-	temp.assign(word, 0, word_len-len);
-	if( dict.find(temp) != dict.end() ) {
-	  temp = minusminus;
-	  temp.append(word.begin()+word_len-len, word.end());
-	  instances.push_back(dict[temp]);
-	}
-  }
-//   if(is_prefix) {
-// 	if( dict.find(word.substr(len, word_len-len)) != dict.end() )
-// 	  instances.push_back(dict[word.substr(0, len)+"--"]);
-//   } else {
-// 	if( dict.find(word.substr(0, word_len-len)) != dict.end() )
-// 	  instances.push_back(dict["--"+word.substr(word_len-len, len)]);
-//   }
+    static std::string temp, minusminus = "--";
+    if (is_prefix) {
+        temp.assign(word, len, word_len - len);
+        if (dict.find(temp) != dict.end()) {
+            temp.assign(word, 0, len);
+            temp += minusminus;
+            instances.push_back(dict[temp]);
+        }
+    }
+    else {
+        temp.assign(word, 0, word_len - len);
+        if (dict.find(temp) != dict.end()) {
+            temp = minusminus;
+            temp.append(word.begin() + word_len - len, word.end());
+            instances.push_back(dict[temp]);
+        }
+    }
+    //   if(is_prefix) {
+    // 	if( dict.find(word.substr(len, word_len-len)) != dict.end() )
+    // 	  instances.push_back(dict[word.substr(0, len)+"--"]);
+    //   } else {
+    // 	if( dict.find(word.substr(0, word_len-len)) != dict.end() )
+    // 	  instances.push_back(dict["--"+word.substr(word_len-len, len)]);
+    //   }
 }
 
 inline void PrefixSuffixRemovePredicate::identify_strings(wordType word_id, wordType_set& words) const {
-  Dictionary& dict = Dictionary::GetDictionary();
-  const string& word = dict[word_id];
-  string::size_type word_len = word.size();
-  if(word_len<=len)
-	return;
-  
-  static string temp, minusminus = "--";
-  if(is_prefix) {
-	temp.assign(word, len, word_len-len);
-	if( dict.find(temp) != dict.end() ) {
-	  temp.assign(word, 0, len);
-	  temp += minusminus;
-	  words.insert(dict.insert(temp));
-	}
-  } else {
-	temp.assign(word, 0, word_len-len);
-	if( dict.find(temp) != dict.end() ) {
-	  temp = minusminus;
-	  temp.append(word.begin()+word_len-len, word.end());
-	  words.insert(dict.insert(temp));
-	}
-  }
+    Dictionary& dict = Dictionary::GetDictionary();
+    const std::string& word = dict[word_id];
+    std::string::size_type word_len = word.size();
+    if (word_len <= len) {
+        return;
+    }
+
+    static std::string temp, minusminus = "--";
+    if (is_prefix) {
+        temp.assign(word, len, word_len - len);
+        if (dict.find(temp) != dict.end()) {
+            temp.assign(word, 0, len);
+            temp += minusminus;
+            words.insert(dict.insert(temp));
+        }
+    }
+    else {
+        temp.assign(word, 0, word_len - len);
+        if (dict.find(temp) != dict.end()) {
+            temp = minusminus;
+            temp.append(word.begin() + word_len - len, word.end());
+            words.insert(dict.insert(temp));
+        }
+    }
 }
 
 #endif

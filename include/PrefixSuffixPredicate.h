@@ -34,43 +34,43 @@
 #include "typedef.h"
 #include "svector.h"
 
-class PrefixSuffixPredicate: public SubwordPartPredicate {
-  typedef SubwordPartPredicate super;
-  typedef PrefixSuffixPredicate self;
+class PrefixSuffixPredicate : public SubwordPartPredicate {
+    using super = SubwordPartPredicate;
+    using self = PrefixSuffixPredicate;
 
 protected:
-  bool is_prefix;
+    bool is_prefix;
 
 public:
-  PrefixSuffixPredicate(relativePosType sample, storage_type feature, bool is_p=false, char length=1):
-	super(sample, feature, length),
-	is_prefix(is_p)
-  {
-  }
+    PrefixSuffixPredicate(relativePosType sample, storage_type feature, bool is_p = false, char length = 1)
+      : super(sample, feature, length)
+      , is_prefix(is_p) {
+    }
 
-  PrefixSuffixPredicate(const PrefixSuffixPredicate& pred):
-	super(pred),
-	is_prefix(pred.is_prefix)
-  {}
+    PrefixSuffixPredicate(const PrefixSuffixPredicate& pred)
 
-  virtual ~PrefixSuffixPredicate() {}
+      = default;
 
-  virtual bool test(const wordType2D& corpus, int sample_ind, const wordType value) const = 0;
-  
-  virtual double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& ) const {
-	if(test(corpus, sample_ind, value))
-	  return 1.0;
-	else
-	  return 0.0;
-  }
+    ~PrefixSuffixPredicate() override = default;
 
-  self& operator= (const self& s) {
-	if(this != &s) {
-	  super::operator= (s);
-	  is_prefix = s.is_prefix;
-	}
-	return *this;
-  }
+    bool test(const wordType2D& corpus, int sample_ind, wordType value) const override = 0;
+
+    double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& /*unused*/) const override {
+        if (test(corpus, sample_ind, value)) {
+            return 1.0;
+        }
+        {
+            return 0.0;
+        }
+    }
+
+    self& operator=(const self& s) {
+        if (this != &s) {
+            super::operator=(s);
+            is_prefix = s.is_prefix;
+        }
+        return *this;
+    }
 };
 
 #endif

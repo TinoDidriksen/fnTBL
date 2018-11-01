@@ -37,170 +37,177 @@
 #include "svector.h"
 #include "Params.h"
 
-class ContainsStringPredicate:  public SubwordPartPredicate {
+class ContainsStringPredicate : public SubwordPartPredicate {
 public:
-  typedef SubwordPartPredicate super;
-  typedef ContainsStringPredicate self;
+    using super = SubwordPartPredicate;
+    using self = ContainsStringPredicate;
 
 public:
-  ContainsStringPredicate(relativePosType sample, storage_type feature, unsigned char l): super(sample, feature, l) {
-  }
-  
-  ContainsStringPredicate(const self& pred): super(pred) {
-  }
+    ContainsStringPredicate(relativePosType sample, storage_type feature, unsigned char l)
+      : super(sample, feature, l) {
+    }
 
-  virtual ~ContainsStringPredicate() {}
+    ContainsStringPredicate(const self& pred) = default;
 
-  virtual bool test(const wordType2D& corpus, int sample_ind, const wordType value) const {
-	const Dictionary& dict = Dictionary::GetDictionary();
-	const 
-	  string& infix = dict[value],
-	  &word = dict[corpus[sample_difference+sample_ind][feature_id]];
-	static string temp;
-	temp.assign(infix.begin(), infix.begin()+len);
+    ~ContainsStringPredicate() override = default;
 
-	string::size_type pos = word.find(temp);
-	return pos != word.npos;
-  }
+    bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
+        const Dictionary& dict = Dictionary::GetDictionary();
+        const std::string &infix = dict[value],
+                          &word = dict[corpus[sample_difference + sample_ind][feature_id]];
+        static std::string temp;
+        temp.assign(infix.begin(), infix.begin() + len);
 
-  virtual string printMe(wordType instance) const {
-	const Dictionary& dict = Dictionary::GetDictionary();
-	const string& infix = dict[instance];
-	static string infix_size;
-	infix_size = itoa(len);
-	if(max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0)
-	  return PredicateTemplate::name_map[feature_id] + "::" + infix_size+"<>=" + infix;
-	else
-	  return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" + 
-		infix_size + "<>=" + infix;
-  }
+        std::string::size_type pos = word.find(temp);
+        return pos != word.npos;
+    }
 
-  void instantiate(const wordType2D&, int sample_ind, wordTypeVector&) const;
-  void identify_strings(wordType word_id, wordType_set& words) const;
+    std::string printMe(wordType instance) const override {
+        const Dictionary& dict = Dictionary::GetDictionary();
+        const std::string& infix = dict[instance];
+        static std::string infix_size;
+        infix_size = itoa(len);
+        if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
+            return PredicateTemplate::name_map[feature_id] + "::" + infix_size + "<>=" + infix;
+        }
+        {
+            return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" +
+                   infix_size + "<>=" + infix;
+        }
+    }
 
-  static word_list_rep_type feature_lookup;
-  static bool2D seen;
+    void instantiate(const wordType2D& /*corpus*/, int sample_ind, wordTypeVector& /*instances*/) const override;
+    void identify_strings(wordType word_id, wordType_set& words) const override;
 
-  static void Initialize(int size) {
-	char sn[20];
-	fill(sn, sn+20, 0);
-	for(rep_vector::iterator i=feature_len_pair_list.begin() ; 
-		i!=feature_len_pair_list.end() ; 
-		++i) {
-	  sn[static_cast<unsigned>(i->second)] = 1;
-	}
+    static word_list_rep_type feature_lookup;
+    static bool2D seen;
 
-	int max = 0;
-	for(int i=0 ; i<20 ; i++)
-	  if(sn[i]!=0)
-		max = i;
+    static void Initialize(int size) {
+        char sn[20];
+        std::fill(sn, sn + 20, 0);
+        for (auto& i : feature_len_pair_list) {
+            sn[static_cast<unsigned>(i.second)] = 1;
+        }
 
-	feature_lookup.resize(max);
-	for(int i=0 ; i<max ; i++)
-	  feature_lookup[i].resize(size);
+        int max = 0;
+        for (int i = 0; i < 20; i++) {
+            if (sn[i] != 0) {
+                max = i;
+            }
+        }
 
-	seen.resize(max);
-	for(int i=0 ; i<max ; i++) {
-	  seen[i].resize(size);
-	  fill(seen[i].begin(), seen[i].end(), false);
-	}
-// 	super::Initialize(size, feature_lookup, seen);
-  }
+        feature_lookup.resize(max);
+        for (int i = 0; i < max; i++) {
+            feature_lookup[i].resize(size);
+        }
 
-  static void Destroy() {
-	word_list_rep_type tmp_lst;
-	feature_lookup.swap(tmp_lst);
-	bool2D bool_tmp;
-	seen.swap(bool_tmp);
-  }
+        seen.resize(max);
+        for (int i = 0; i < max; i++) {
+            seen[i].resize(size);
+            std::fill(seen[i].begin(), seen[i].end(), false);
+        }
+        // 	super::Initialize(size, feature_lookup, seen);
+    }
 
+    static void Destroy() {
+        word_list_rep_type tmp_lst;
+        feature_lookup.swap(tmp_lst);
+        bool2D bool_tmp;
+        seen.swap(bool_tmp);
+    }
 };
 
 inline void ContainsStringPredicate::instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const {
-  static set<wordType> words;
-  words.clear();
-  const Dictionary& dict = Dictionary::GetDictionary();
-  wordType word_id = corpus[sample_ind+sample_difference][feature_id];
-  const string& word = dict[word_id];
-  string::size_type word_len = word.size();
-  static string temp;
+    static std::set<wordType> words;
+    words.clear();
+    const Dictionary& dict = Dictionary::GetDictionary();
+    wordType word_id = corpus[sample_ind + sample_difference][feature_id];
+    const std::string& word = dict[word_id];
+    std::string::size_type word_len = word.size();
+    static std::string temp;
 
-  static bool cache_word_lists = Params::GetParams().valueForParameter("CACHE_INTERNAL_WORD_LIST", true);
+    static bool cache_word_lists = Params::GetParams().valueForParameter("CACHE_INTERNAL_WORD_LIST", true);
 
-  // Create the words, in sequence, such that they are not prefixes, nor suffixes.
-  if(word_len <= len)
-	return;
+    // Create the words, in sequence, such that they are not prefixes, nor suffixes.
+    if (word_len <= len) {
+        return;
+    }
 
-  if(cache_word_lists && word_id < seen[len-1].size() && seen[len-1][word_id]) {
-	wordType_svector& vect = feature_lookup[len-1][word_id];
-	for(wordType_svector::iterator i=vect.begin() ; i!=vect.end() ; ++i) {
-// 	  words.insert(*i);
-	  ON_DEBUG(
-			   string s=dict[*i].substr(0, dict[*i].size()-2);
-			   assert(word.find(s) != word.npos);
-			   )
-	  instances.push_back(*i);
-	}
-  } else {
-	string::const_iterator last = word.begin() + (word_len-len+1);
-	for(string::const_iterator i=word.begin() ; i!=last ; ++i) {
-	  temp.assign(i, i+len);
-	  temp += "<>";
-	  ON_DEBUG(assert(temp.size() == len+2));
-	  Dictionary::const_iterator it = dict.find(temp);
-	  int index = it-dict.begin();
-	  if(it!=dict.end() && words.insert(index).second) {
-		instances.push_back(index);
-		words.insert(index);
-	  }
-	}
-  }
+    if (cache_word_lists && word_id < seen[len - 1].size() && seen[len - 1][word_id]) {
+        wordType_svector& vect = feature_lookup[len - 1][word_id];
+        for (unsigned int& i : vect) {
+            // 	  words.insert(*i);
+            ON_DEBUG(
+              string s = dict[*i].substr(0, dict[*i].size() - 2);
+              assert(word.find(s) != word.npos);)
+            instances.push_back(i);
+        }
+    }
+    else {
+        std::string::const_iterator last = word.begin() + (word_len - len + 1);
+        for (std::string::const_iterator i = word.begin(); i != last; ++i) {
+            temp.assign(i, i + len);
+            temp += "<>";
+            ON_DEBUG(assert(temp.size() == len + 2));
+            Dictionary::const_iterator it = dict.find(temp);
+            int index = it - dict.begin();
+            if (it != dict.end() && words.insert(index).second) {
+                instances.push_back(index);
+                words.insert(index);
+            }
+        }
+    }
 }
 
 inline void ContainsStringPredicate::identify_strings(wordType word_id, wordType_set& words) const {
-  Dictionary& dict = Dictionary::GetDictionary();
-  const string& word = dict[word_id];
-  string::size_type word_len = word.size();
+    Dictionary& dict = Dictionary::GetDictionary();
+    const std::string& word = dict[word_id];
+    std::string::size_type word_len = word.size();
 
-  if(word_len <= len)
-	return;
+    if (word_len <= len) {
+        return;
+    }
 
-  // The following value is true by default, unless specifically disabled
-  static bool cache_word_lists = Params::GetParams().valueForParameter("CACHE_INTERNAL_WORD_LIST", true);
-  static string temp;
+    // The following value is true by default, unless specifically disabled
+    static bool cache_word_lists = Params::GetParams().valueForParameter("CACHE_INTERNAL_WORD_LIST", true);
+    static std::string temp;
 
-  if(cache_word_lists && word_id < seen[len-1].size() && seen[len-1][word_id]) {
-	wordType_svector& vect = feature_lookup[len-1][word_id];
-	for(wordType_svector::iterator i=vect.begin() ; i!=vect.end() ; ++i)
-	  words.insert(*i);
-  } else {
-	static wordType_set wrds;
-	wrds.clear();
-	string::const_iterator last = word.begin() + (word_len-len+1);
-	for(string::const_iterator i=word.begin() ; i!=last ; ++i) {
-	  temp.assign(i, i+len);
-	  temp += "<>";
-	  ON_DEBUG(assert(temp.size() == len+2));
-	  wrds.insert(dict.insert(temp));
-	}
+    if (cache_word_lists && word_id < seen[len - 1].size() && seen[len - 1][word_id]) {
+        wordType_svector& vect = feature_lookup[len - 1][word_id];
+        for (unsigned int& i : vect) {
+            words.insert(i);
+        }
+    }
+    else {
+        static wordType_set wrds;
+        wrds.clear();
+        std::string::const_iterator last = word.begin() + (word_len - len + 1);
+        for (std::string::const_iterator i = word.begin(); i != last; ++i) {
+            temp.assign(i, i + len);
+            temp += "<>";
+            ON_DEBUG(assert(temp.size() == len + 2));
+            wrds.insert(dict.insert(temp));
+        }
 
-	if(cache_word_lists && word_id < feature_lookup[len-1].size()) {
-								// If the word is in the training vocabulary and was seen before
-								// and we're doing caching
-	  seen[len-1][word_id] = true;
-	  wordType_svector& vect = feature_lookup[len-1][word_id];
-	  vect.resize(wrds.size());
-	  wordType_svector::iterator j=vect.begin();
-	  for(wordType_set::iterator i=wrds.begin() ; i!=wrds.end() ; ++i, ++j) {
-		words.insert(*i);
-		*j = *i;
-	  }
-	} else {					// Otherwise, add it to the list of words to go in the index,
-								// without adding it to the local vocabulary
-	  for(wordType_set::iterator i=wrds.begin() ; i!=wrds.end() ; ++i)
-		words.insert(*i);
-	}
-  }
+        if (cache_word_lists && word_id < feature_lookup[len - 1].size()) {
+            // If the word is in the training vocabulary and was seen before
+            // and we're doing caching
+            seen[len - 1][word_id] = true;
+            wordType_svector& vect = feature_lookup[len - 1][word_id];
+            vect.resize(wrds.size());
+            wordType_svector::iterator j = vect.begin();
+            for (auto i = wrds.begin(); i != wrds.end(); ++i, ++j) {
+                words.insert(*i);
+                *j = *i;
+            }
+        }
+        else { // Otherwise, add it to the list of words to go in the index,
+               // without adding it to the local vocabulary
+            for (auto wrd : wrds) {
+                words.insert(wrd);
+            }
+        }
+    }
 }
 
 #endif

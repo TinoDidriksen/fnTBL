@@ -37,211 +37,225 @@
 #include <map>
 
 
-template <class index2, class index1 = unsigned, class map_type = HASH_NAMESPACE::hash_map<index2, index1> > 
+template<class index2, class index1 = unsigned, class map_type = HASH_NAMESPACE::hash_map<index2, index1>>
 class indexed_map {
 public:
-  typedef indexed_map<index2, index1, map_type> self;
-  typedef std::vector<index2*> rep_type;
+    using self = indexed_map<index2, index1, map_type>;
+    using rep_type = std::vector<index2*>;
 
-//   typedef rep_type::iterator iterator;
-//   typedef rep_type::const_iterator const_iterator;
-  typedef int size_type;
+    //   using iterator = rep_type::iterator;
+    //   using const_iterator = rep_type::const_iterator;
+    using size_type = int;
 
-  template <class Value, class Ref, class Ptr, class underlying_iterator>
-  class generic_iterator {
-  public:
-	typedef Value value_type;
-	typedef int difference_type;
-	typedef Ref reference;
-	typedef Ptr pointer;
-	typedef generic_iterator<Value, Ref, Ptr, underlying_iterator> self;
+    template<class Value, class Ref, class Ptr, class underlying_iterator>
+    class generic_iterator {
+    public:
+        using value_type = Value;
+        using difference_type = int;
+        using reference = Ref;
+        using pointer = const std::basic_string<char, std::char_traits<char>, std::allocator<char>>*;
+        using self = generic_iterator<Value, Ref, Ptr, underlying_iterator>;
 
-	generic_iterator(underlying_iterator i): it(i)  {}
+        generic_iterator(underlying_iterator i)
+          : it(i) {}
 
-	generic_iterator(const self& i): it(i.it) {}
-	
-	~generic_iterator() {}
+        generic_iterator(const self& i)
+          : it(i.it) {}
 
-	Ref operator*() {
-	  return **it;
-	}
+        ~generic_iterator() = default;
 
-	Ptr operator ->() {
-	  return *it;
-	}
+        Ref operator*() {
+            return **it;
+        }
 
-	self& operator++() {
-	  ++it;
-	  return *this;
-	}
+        Ptr operator->() {
+            return *it;
+        }
 
-	self operator++ (int) {
-	  self t = *this;
-	  ++it;
-	  return t;
-	}
+        self& operator++() {
+            ++it;
+            return *this;
+        }
 
-	self& operator-- () {
-	  --it;
-	  return *it;
-	}
+        self operator++(int) {
+            self t = *this;
+            ++it;
+            return t;
+        }
 
-	self operator-- (int) {
-	  self temp = *this;
-	  --it;
-	  return temp;
-	}
+        self& operator--() {
+            --it;
+            return *it;
+        }
 
-	bool operator== (const self& other) const {
-	  return it == other.it;
-	}
+        self operator--(int) {
+            self temp = *this;
+            --it;
+            return temp;
+        }
 
-	bool operator != (const self& other) const {
-	  return it != other.it;
-	}
+        bool operator==(const self& other) const {
+            return it == other.it;
+        }
 
-	friend difference_type operator- (const self& it1, const self& it2) {
-	  return it1.it - it2.it;
-	}
+        bool operator!=(const self& other) const {
+            return it != other.it;
+        }
 
-  private:
-	underlying_iterator it;
-  };
+        friend difference_type operator-(const self& it1, const self& it2) {
+            return it1.it - it2.it;
+        }
 
-  typedef generic_iterator<index2, index2&, index2*, typename std::vector<index2*>::iterator > iterator;
-  typedef generic_iterator<const index2, const index2&, const index2*, typename std::vector<index2*>::const_iterator > const_iterator;
+    private:
+        underlying_iterator it;
+    };
 
-  indexed_map(): fake_index(-1) {}
+    using iterator = generic_iterator<index2, index2&, index2*, typename std::vector<index2*>::iterator>;
+    using const_iterator = generic_iterator<const index2, const index2&, const index2*, typename std::vector<index2*>::const_iterator>;
 
-  // This should not be called at all...
+    indexed_map()
+      : fake_index(-1) {}
+
+    // This should not be called at all...
 private:
-  indexed_map(const self& ra):index_map(ra.index_map), storage(ra.storage), available_inds(ra.available_inds) {}
-  
+    indexed_map(const self& ra)
+      : index_map(ra.index_map)
+      , storage(ra.storage)
+      , available_inds(ra.available_inds) {}
+
 public:
-  index1 insert(const index2& elem) {
-	typename map_type::iterator f = index_map.find(elem);
-	if(f == index_map.end()) {
-	  if(available_inds.size()>0) {
-		f = index_map.insert(std::make_pair(elem, available_inds.back())).first;
-		storage[available_inds.back()] = & const_cast<index2&>(f->first);
- 		available_inds.pop_back();
-	  } else {
-		f = index_map.insert(std::make_pair(elem, storage.size())).first;
-		storage.push_back(& const_cast<index2&>(f->first));
-	  }
-	}
-	return f->second;
-  }
+    index1 insert(const index2& elem) {
+        auto f = index_map.find(elem);
+        if (f == index_map.end()) {
+            if (!available_inds.empty()) {
+                f = index_map.insert(std::make_pair(elem, available_inds.back())).first;
+                storage[available_inds.back()] = &const_cast<index2&>(f->first);
+                available_inds.pop_back();
+            }
+            else {
+                f = index_map.insert(std::make_pair(elem, storage.size())).first;
+                storage.push_back(&const_cast<index2&>(f->first));
+            }
+        }
+        return f->second;
+    }
 
-  size_type size() const {
-	return storage.size() - available_inds.size();
-  }
+    size_type size() const {
+        return storage.size() - available_inds.size();
+    }
 
-  index1 reverse_access(const index2& elem) const {
-	typename map_type::const_iterator f = index_map.find(elem);
-	if(f == index_map.end()) {
-	  return -1;
-	} else
-	  return f->second;
-  }	
+    index1 reverse_access(const index2& elem) const {
+        auto f = index_map.find(elem);
+        if (f == index_map.end()) {
+            return -1;
+        }
+        {
+            return f->second;
+        }
+    }
 
-  index1 operator [] (const index2& elem) const {
-	return reverse_access(elem);
-  }
+    index1 operator[](const index2& elem) const {
+        return reverse_access(elem);
+    }
 
-  const index2& direct_access(index1 ind) const {
-	if (ind == fake_index || ind>=storage.size())
-	  return fake_elem;
-	
-	return *storage[ind];
-  }
+    const index2& direct_access(index1 ind) const {
+        if (ind == fake_index || ind >= storage.size()) {
+            return fake_elem;
+        }
 
-  const index2& operator [] (index1 ind) const {
-	return direct_access(ind);
-  }
+        return *storage[ind];
+    }
 
-  const index2& direct_access(index1 ind) {
-	if (ind == fake_index || ind>=storage.size())
-	  return fake_elem;
-	
-	return *storage[ind];
-  }	
+    const index2& operator[](index1 ind) const {
+        return direct_access(ind);
+    }
 
-  const index2& operator [] (index1 ind) {
-	return direct_access(ind);
-  }
+    const index2& direct_access(index1 ind) {
+        if (ind == fake_index || ind >= storage.size())
+            return fake_elem;
 
-  void remove_element(const index2& elem) {
-	typename map_type::iterator f = index_map.find(elem);
-	if(f != index_map.end()) {
-	  available_inds.push_back(f->second);
-	  index_map.erase(f);
-	  storage[f->second] = 0;
-	}
-  }
+        return *storage[ind];
+    }
 
-  iterator begin() {
-	return storage.begin();
-  }
+    const index2& operator[](index1 ind) {
+        return direct_access(ind);
+    }
 
-  iterator end() {
-	return storage.end();
-  }
+    void remove_element(const index2& elem) {
+        typename map_type::iterator f = index_map.find(elem);
+        if (f != index_map.end()) {
+            available_inds.push_back(f->second);
+            index_map.erase(f);
+            storage[f->second] = 0;
+        }
+    }
 
-  const_iterator begin() const {
-	return storage.begin();
-  }
+    iterator begin() {
+        return storage.begin();
+    }
 
-  const_iterator end() const {
-	return storage.end();
-  }
+    iterator end() {
+        return storage.end();
+    }
 
-  iterator find(const index2& elem) {
-	typename map_type::iterator it = index_map.find(elem);
-	if(it == index_map.end())
-	  return end();
-	else
-	  return storage.begin() + it->second;
-  }
+    const_iterator begin() const {
+        return storage.begin();
+    }
 
-  const_iterator find(const index2& elem) const {
-	typename map_type::const_iterator it = index_map.find(elem);
-	if(it == index_map.end())
-	  return end();
-	else
-	  return storage.begin() + it->second;
-  }
+    const_iterator end() const {
+        return storage.end();
+    }
 
-//   template <class iterator_type>
-//   void erase(iterator_type i) {
-// 	remove_element(*i);
-//   }
+    iterator find(const index2& elem) {
+        auto it = index_map.find(elem);
+        if (it == index_map.end()) {
+            return end();
+        }
+        {
+            return storage.begin() + it->second;
+        }
+    }
 
-  void erase(index1 ind) {
-	remove_element(*storage[ind]);
-  }
+    const_iterator find(const index2& elem) const {
+        auto it = index_map.find(elem);
+        if (it == index_map.end()) {
+            return end();
+        }
+        {
+            return storage.begin() + it->second;
+        }
+    }
 
-  void clear() {
-	storage.clear();
-	index_map.clear();
-  }
+    //   template <class iterator_type>
+    //   void erase(iterator_type i) {
+    // 	remove_element(*i);
+    //   }
 
-  void destroy() {
-	std::vector<index2*> tmp1;
-	storage.swap(tmp1);
-	std::vector<index1> tmp2;
-	available_inds.swap(tmp2);
-	map_type tmp3;
-	index_map.swap(tmp3);
-  }
+    void erase(index1 ind) {
+        remove_element(*storage[ind]);
+    }
 
-  index2 fake_elem;
-  index1 fake_index;
+    void clear() {
+        storage.clear();
+        index_map.clear();
+    }
+
+    void destroy() {
+        std::vector<index2*> tmp1;
+        storage.swap(tmp1);
+        std::vector<index1> tmp2;
+        available_inds.swap(tmp2);
+        map_type tmp3;
+        index_map.swap(tmp3);
+    }
+
+    index2 fake_elem;
+    index1 fake_index;
 
 protected:
-  map_type index_map;
-  std::vector<index2*> storage;
-  std::vector<index1> available_inds;
+    map_type index_map;
+    std::vector<index2*> storage;
+    std::vector<index1> available_inds;
 };
 
 #endif

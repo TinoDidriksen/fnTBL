@@ -30,13 +30,12 @@
 #include <iostream>
 
 #include "typedef.h"
-using namespace std;
 
 void process_line(const string1D& features, int line_no);
-void studyData(const string&, const string& = "");
+void studyData(const std::string&, const std::string& = "");
 void readInData(char*);
-bool read_lines(istream&, int num_lines=1);
-void generate_index(const set<int>& = set<int>());
+bool read_lines(std::istream&, int num_lines = 1);
+void generate_index(const std::set<int>& = std::set<int>());
 void clear_corpus();
-void printCorpusState(ostream&, bool printRT=false);
+void printCorpusState(std::ostream&, bool printRT = false);
 #endif

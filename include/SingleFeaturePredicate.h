@@ -27,7 +27,7 @@
   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 */
 
-#ifndef __SingleFeaturePredicate_h__ 
+#ifndef __SingleFeaturePredicate_h__
 #define __SingleFeaturePredicate_h__
 
 #include "AtomicPredicate.h"
@@ -36,82 +36,86 @@
 
 class SingleFeaturePredicate : public AtomicPredicate {
 protected:
-  typedef featureIndexType storage_type;
-  relativePosType sample_difference;
-  
-  storage_type feature_id;
+    using storage_type = featureIndexType;
+    relativePosType sample_difference;
+
+    storage_type feature_id;
 
 public:
-  SingleFeaturePredicate(relativePosType sample, storage_type feature): sample_difference(sample), feature_id(feature) {}
-  SingleFeaturePredicate(const SingleFeaturePredicate& pred)
-	: sample_difference(pred.sample_difference), feature_id(pred.feature_id)
-  {}
+    SingleFeaturePredicate(relativePosType sample, storage_type feature)
+      : sample_difference(sample)
+      , feature_id(feature) {}
+    SingleFeaturePredicate(const SingleFeaturePredicate& pred)
+      : sample_difference(pred.sample_difference)
+      , feature_id(pred.feature_id) {}
 
-  virtual ~SingleFeaturePredicate() {}
+    ~SingleFeaturePredicate() override = default;
 
-  virtual bool test(const wordType2D& corpus, int sample_ind, const wordType value) const {
-	return corpus[sample_ind+sample_difference][feature_id] == value;
-  }
+    bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
+        return corpus[sample_ind + sample_difference][feature_id] == value;
+    }
 
-  virtual double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& context_prob) const {
-	return feature_id<Dictionary::num_classes ? context_prob[sample_ind+sample_difference][value] : 1.0;
-  }
+    double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& context_prob) const override {
+        return feature_id < Dictionary::num_classes ? context_prob[sample_ind + sample_difference][value] : 1.0;
+    }
 
-  virtual string printMe(wordType instance) const ;
+    std::string printMe(wordType instance) const override;
 
-  SingleFeaturePredicate& operator= (const SingleFeaturePredicate& pred) {
-	if (this != &pred) {
-	  sample_difference = pred.sample_difference;
-	  feature_id = pred.feature_id;
-	}
-	return *this;
-  }
+    SingleFeaturePredicate& operator=(const SingleFeaturePredicate& pred) {
+        if (this != &pred) {
+            sample_difference = pred.sample_difference;
+            feature_id = pred.feature_id;
+        }
+        return *this;
+    }
 
-  void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const {
-	instances.resize(1);
-	instances[0] = corpus[sample_ind+sample_difference][feature_id];
-  }
+    void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const override {
+        instances.resize(1);
+        instances[0] = corpus[sample_ind + sample_difference][feature_id];
+    }
 
-  void identify_strings(const wordType1D& word_id, wordType_set& words) const {
-	identify_strings(word_id[feature_id], words);
-  }
+    void identify_strings(const wordType1D& word_id, wordType_set& words) const override {
+        identify_strings(word_id[feature_id], words);
+    }
 
-  void identify_strings(wordType word_id, wordType_set& words) const {
-// 	static Dictionary& dict = Dictionary::GetDictionary();
-	words.insert(word_id);
-  }
+    void identify_strings(wordType word_id, wordType_set& words) const override {
+        // 	static Dictionary& dict = Dictionary::GetDictionary();
+        words.insert(word_id);
+    }
 
-  void get_sample_differences(position_vector& positions) const {
-	positions.push_back(sample_difference);
-  }
+    void get_sample_differences(position_vector& positions) const override {
+        positions.push_back(sample_difference);
+    }
 
-  void get_feature_ids(storage_vector& features) const {
-	features.push_back(feature_id);
-  }
+    void get_feature_ids(storage_vector& features) const override {
+        features.push_back(feature_id);
+    }
 
-  virtual void set_dependencies(vector<bit_vector>& dep) const;
+    void set_dependencies(std::vector<bit_vector>& dep) const override;
 
-  virtual bool is_indexable() const { 
-	return true;
-  }
+    bool is_indexable() const override {
+        return true;
+    }
 };
 
 #include "Predicate.h"
 
-inline void SingleFeaturePredicate::set_dependencies(vector<bit_vector>& dep) const {
-//   cerr << dep.size() << " " << sample_difference-PredicateTemplate::MaxBackwardLookup << " " 
-// 	   << dep[sample_difference-PredicateTemplate::MaxBackwardLookup].size() << " " << (int)feature_id << endl;
-  dep[sample_difference-PredicateTemplate::MaxBackwardLookup][feature_id] = true;
-//   cerr << "Out of here" << endl;
-} 
+inline void SingleFeaturePredicate::set_dependencies(std::vector<bit_vector>& dep) const {
+    //   cerr << dep.size() << " " << sample_difference-PredicateTemplate::MaxBackwardLookup << " "
+    // 	   << dep[sample_difference-PredicateTemplate::MaxBackwardLookup].size() << " " << (int)feature_id << endl;
+    dep[sample_difference - PredicateTemplate::MaxBackwardLookup][feature_id] = true;
+    //   cerr << "Out of here" << endl;
+}
 
-inline string SingleFeaturePredicate::printMe(wordType instance) const {
-  Dictionary& dict = Dictionary::GetDictionary();
+inline std::string SingleFeaturePredicate::printMe(wordType instance) const {
+    Dictionary& dict = Dictionary::GetDictionary();
 
-  if(max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0)
-	return PredicateTemplate::name_map[feature_id] + "=" + dict[instance];
-  else
-	return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "=" + dict[instance];
+    if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
+        return PredicateTemplate::name_map[feature_id] + "=" + dict[instance];
+    }
+    {
+        return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "=" + dict[instance];
+    }
 }
 
 #endif

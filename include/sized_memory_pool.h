@@ -34,14 +34,14 @@
 
 template <class type>
 class sized_memory_pool {
-  typedef std::vector<type*> ptype_vector;
-  typedef std::vector<ptype_vector > rep_type;
+  using ptype_vector = std::vector<type*>;
+  using rep_type = std::vector<ptype_vector>;
 public:
-  typedef sized_memory_pool<type> self;
+  using self = sized_memory_pool<type>;
   sized_memory_pool(int sz): memory_pool(sz) {}
 
 private:
-  sized_memory_pool(const self& mp) {}
+  sized_memory_pool(const self& mp) = delete;
 
 public:
   ~sized_memory_pool() {
@@ -50,24 +50,25 @@ public:
   }
 
   type* allocate(int n) {
-    if(n==0)
-      return 0;
+    if(n==0) {
+      return nullptr;
+}
 
-    if(n<memory_pool.size() && memory_pool[n].size()>0) {
+    if(n<memory_pool.size() && !memory_pool[n].empty()) {
       type* data = memory_pool[n].back();
       memory_pool[n].pop_back();
       return data;
     } 
-    else 
+     
       return new type [n];
   }
 
   void deallocate(type* data, int n) {
-    if(n<memory_pool.size() && n>0)
+    if(n<memory_pool.size() && n>0) {
       memory_pool[n].push_back(data);
-    else {
+    } else {
       delete [] data;
-      data = 0;
+      data = nullptr;
     }
   }
 
@@ -81,9 +82,11 @@ public:
   }
 
   void clear() {
-    for(typename rep_type::iterator i=memory_pool.begin() ; i!=memory_pool.end() ; ++i)
-      for(typename ptype_vector::iterator j=i->begin() ; j!=i->end() ; ++j)
+    for(auto i=memory_pool.begin() ; i!=memory_pool.end() ; ++i) {
+      for(auto j=i->begin() ; j!=i->end() ; ++j) {
 	delete [] *j;
+}
+}
     memory_pool.clear();
   }
 

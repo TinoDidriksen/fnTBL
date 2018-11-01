@@ -34,97 +34,98 @@
 
 extern int TRUTH;
 
-Constraint::Constraint(const string& line1) {
-  line_splitter ls;
-  ls.split(line1);
-  features.resize(ls.size()-2);
-  
-  for(int i=0 ; i<ls.size()-2 ; i++)
-	features[i] = RuleTemplate::name_map[ls[i]];
-  target_feature = RuleTemplate::name_map[ls[ls.size()-2]];
+Constraint::Constraint(const std::string& line1) {
+    line_splitter ls;
+    ls.split(line1);
+    features.resize(ls.size() - 2);
 
-  int sz = ls.size()-2;
-  istream* istr;
-  smart_open(istr, ls[ls.size()-1]);
+    for (int i = 0; i < ls.size() - 2; i++) {
+        features[i] = RuleTemplate::name_map[ls[i]];
+    }
+    target_feature = RuleTemplate::name_map[ls[ls.size() - 2]];
 
-  string line;
-  static wordTypeVector v1, v2;
-  v1.resize(sz);
-  
-  const Dictionary& dict = Dictionary::GetDictionary();
-  bit_vector seen(Dictionary::num_classes+1);
+    int sz = ls.size() - 2;
+    std::istream* istr;
+    smart_open(istr, ls[ls.size() - 1]);
 
-  while (getline(*istr, line)) {
-	fill(seen.begin(), seen.end(), false);
-	ls.split(line);
-	
-	bool unknown = false;
-	for(int i=0 ; i<sz ; i++) {
-	  wordType wid = dict[ls[i]];
-	  if(dict.wasUnknown()) {
-		unknown = 1;
-		break;
-	  }
-	  v1[i] = wid;
-	}
+    std::string line;
+    static wordTypeVector v1, v2;
+    v1.resize(sz);
 
-	if(unknown)
-	  continue;
+    const Dictionary& dict = Dictionary::GetDictionary();
+    bit_vector seen(Dictionary::num_classes + 1);
 
-	int no_seen = 0;
-	for(int i=sz ; i<ls.size() ; i++) {
-	  wordType wid = dict[ls[i]];
-	  if(wid <= Dictionary::num_classes && ! dict.wasUnknown()) {
-		seen[wid] = true;
-		no_seen++;
-	  }
-	}
+    while (std::getline(*istr, line)) {
+        fill(seen.begin(), seen.end(), false);
+        ls.split(line);
 
-	// No actual words have been seen
-	if (no_seen == 0)
-	  continue;
+        bool unknown = false;
+        for (int i = 0; i < sz; i++) {
+            wordType wid = dict[ls[i]];
+            if (dict.wasUnknown()) {
+                unknown = 1;
+                break;
+            }
+            v1[i] = wid;
+        }
 
- 	constraint[v1] = seen;
-  }
+        if (unknown)
+            continue;
+
+        int no_seen = 0;
+        for (int i = sz; i < ls.size(); i++) {
+            wordType wid = dict[ls[i]];
+            if (wid <= Dictionary::num_classes && !dict.wasUnknown()) {
+                seen[wid] = true;
+                no_seen++;
+            }
+        }
+
+        // No actual words have been seen
+        if (no_seen == 0)
+            continue;
+
+        constraint[v1] = seen;
+    }
 }
 
 bool Constraint::test(const wordType1D& feature_vector, const Target& target) const {
-  TargetTemplate& templ = TargetTemplate::Templates[target.tid];
-  TargetTemplate::pos_vector::iterator p;
-  if((p = find(templ.positions.begin(), templ.positions.end(), target_feature-TargetTemplate::TRUTH_START)) ==
-	 templ.positions.end()) // The constraint is not on any feature from the current target
-	return true;
+    TargetTemplate& templ = TargetTemplate::Templates[target.tid];
+    TargetTemplate::pos_vector::iterator p;
+    if ((p = std::find(templ.positions.begin(), templ.positions.end(), target_feature - TargetTemplate::TRUTH_START)) ==
+        templ.positions.end()) // The constraint is not on any feature from the current target
+        return true;
 
-  static vector<wordType> v;
-  initialize_vector(v, feature_vector);
+    static std::vector<wordType> v;
+    initialize_vector(v, feature_vector);
 
-  rep_type::const_iterator it = constraint.find(v);
+    rep_type::const_iterator it = constraint.find(v);
 
-  return it==constraint.end() || it->second[target.vals[p-templ.positions.begin()]];
+    return it == constraint.end() || it->second[target.vals[p - templ.positions.begin()]];
 }
 
 bool Constraint::test(const wordType1D& feature_vector, int class_id) const {
-  static vector<wordType> v;
-  initialize_vector(v, feature_vector);
+    static std::vector<wordType> v;
+    initialize_vector(v, feature_vector);
 
-  rep_type::const_iterator it = constraint.find(v);
+    rep_type::const_iterator it = constraint.find(v);
 
-  return it==constraint.end() || it->second[class_id];
+    return it == constraint.end() || it->second[class_id];
 }
 
-void ConstraintSet::read(const string& file_name) {
-  istream* istr;
-  smart_open(istr, file_name.c_str());
-  string line;
-  line_splitter ls;
+void ConstraintSet::read(const std::string& file_name) {
+    std::istream* istr;
+    smart_open(istr, file_name);
+    std::string line;
+    line_splitter ls;
 
-  while (getline(*istr, line)) {
-	ls.split(line);
-	if(ls.size() == 0 || line[0]=='#')
-	  continue;
+    while (std::getline(*istr, line)) {
+        ls.split(line);
+        if (ls.size() == 0 || line[0] == '#')
+            continue;
 
-	constraints.push_back(Constraint(line));
-  }
+        constraints.push_back(Constraint(line));
+    }
 
-  delete istr;
+    delete istr;
 }

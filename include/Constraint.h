@@ -37,95 +37,102 @@
 #include "hash_wrapper.h"
 #include "Target.h"
 #include "bit_vector.h"
+#include <vector>
 
 namespace HASH_NAMESPACE {
-  template <>
-  struct hash<std::vector<wordType> > {
-    size_t operator() (const std::vector<wordType>& v) const {
-      size_t s = 0;
-      std::vector<wordType>::const_iterator i=v.begin();
-      for( ; i!=v.end() ; ++i)
-	s += 17*s+*i;
-      return s;
+template<>
+struct hash<std::vector<wordType>> {
+    size_t operator()(const std::vector<wordType>& v) const {
+        size_t s = 0;
+        auto i = v.begin();
+        for (; i != v.end(); ++i) {
+            s += 17 * s + *i;
+        }
+        return s;
     }
-  };
-}
+};
+} // namespace std
 
 class Constraint {
 public:
-  typedef std::vector<wordType> wordTypeVector;
-  typedef HASH_NAMESPACE::hash_map<wordTypeVector, bit_vector> rep_type;
+    using wordTypeVector = std::vector<wordType>;
+    using rep_type = HASH_NAMESPACE::hash_map<wordTypeVector, bit_vector>;
 
-  Constraint(const std::string& str);
-  Constraint() {
-  }
+    Constraint(const std::string& line1);
+    Constraint() = default;
 
-  bool test(const wordType1D& feature_vector, int class_id) const;
-  bool test(const wordType1D& feature_vector, const Target& target) const;
+    bool test(const wordType1D& feature_vector, int class_id) const;
+    bool test(const wordType1D& feature_vector, const Target& target) const;
 
-  bool operator () (const wordType1D& feature_vector, int class_id) const {
-    return test(feature_vector, class_id);
-  }
-  bool operator () (const wordType1D& feature_vector, const Target& target) const {
-    return test(feature_vector, target);
-  }
+    bool operator()(const wordType1D& feature_vector, int class_id) const {
+        return test(feature_vector, class_id);
+    }
+    bool operator()(const wordType1D& feature_vector, const Target& target) const {
+        return test(feature_vector, target);
+    }
 
 private:
-  void initialize_vector(std::vector<wordType>& v, const wordType1D& feature_vector) const {
-    v.resize(features.size());
-    int p=0;
-    for(wordTypeVector::const_iterator f=features.begin() ; f!=features.end() ; ++f, ++p)
-      v[p] = feature_vector[*f];
-  }
+    void initialize_vector(std::vector<wordType>& v, const wordType1D& feature_vector) const {
+        v.resize(features.size());
+        int p = 0;
+        for (auto f = features.begin(); f != features.end(); ++f, ++p) {
+            v[p] = feature_vector[*f];
+        }
+    }
 
-  rep_type constraint;
-  wordTypeVector features;
-  featureIndexType target_feature;
+    rep_type constraint;
+    wordTypeVector features;
+    featureIndexType target_feature;
 };
 
 class ConstraintSet {
 public:
-  typedef std::vector<Constraint> constraint_vector;
+    using constraint_vector = std::vector<Constraint>;
 
-  ConstraintSet(const std::string& file_name) {
-    read(file_name);
-  }
+    ConstraintSet(const std::string& file_name) {
+        read(file_name);
+    }
 
-  ConstraintSet() {}
+    ConstraintSet() = default;
 
-  void read(const std::string& file_name);
+    void read(const std::string& file_name);
 
-  bool test(const wordType1D& feature_vector, int class_id) const {
-    for(constraint_vector::const_iterator c=constraints.begin() ; c!=constraints.end() ; ++c)
-      if(! c->test(feature_vector, class_id) )
-	return false;
+    bool test(const wordType1D& feature_vector, int class_id) const {
+        for (const auto& constraint : constraints) {
+            if (!constraint.test(feature_vector, class_id)) {
+                return false;
+            }
+        }
 
-    return true;
-  }
+        return true;
+    }
 
-  bool operator () (const wordType1D& feature_vector, int class_id) const {
-    return test(feature_vector, class_id);
-  }
+    bool operator()(const wordType1D& feature_vector, int class_id) const {
+        return test(feature_vector, class_id);
+    }
 
-  bool test(const wordType1D& feature_vector, const Target& target) const {
-    static wordType fake_rule_index = Dictionary::GetDictionary()["FAKE_CLASS"];
+    bool test(const wordType1D& feature_vector, const Target& target) const {
+        static wordType fake_rule_index = Dictionary::GetDictionary()["FAKE_CLASS"];
 
-    if(target.vals[0] == fake_rule_index) // Constraints don't apply on FAKE_CLASS classes
-      return true;
+        if (target.vals[0] == fake_rule_index) { // Constraints don't apply on FAKE_CLASS classes
+            return true;
+        }
 
-    for(constraint_vector::const_iterator c=constraints.begin() ; c!=constraints.end() ; ++c)
-      if(! c->test(feature_vector, target) )
-	return false;
+        for (const auto& constraint : constraints) {
+            if (!constraint.test(feature_vector, target)) {
+                return false;
+            }
+        }
 
-    return true;
-  }
+        return true;
+    }
 
-  bool operator () (const wordType1D& feature_vector, const Target& target) const {
-    return test(feature_vector, target);
-  }
+    bool operator()(const wordType1D& feature_vector, const Target& target) const {
+        return test(feature_vector, target);
+    }
 
 private:
-  constraint_vector constraints;
+    constraint_vector constraints;
 };
 
 

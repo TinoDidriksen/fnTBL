@@ -34,107 +34,111 @@
 #include "typedef.h"
 #include "indexed_map.h"
 #include "common.h"
+#include <algorithm>
 
 namespace HASH_NAMESPACE {
-  template <>
-  struct hash<std::pair<featureIndexType, relativePosType> > {
-    size_t operator() (const std::pair<featureIndexType, relativePosType>& val) const {
-      return 256*val.first + val.second;
+template<>
+struct hash<std::pair<featureIndexType, relativePosType>> {
+    size_t operator()(const std::pair<featureIndexType, relativePosType>& val) const {
+        return 256 * val.first + val.second;
     }
-  };
+};
 }
 
-class CooccurrencePredicate: public AtomicPredicate {
+class CooccurrencePredicate : public AtomicPredicate {
 public:
-//   typedef trie<wordType, wordTypeVector> word_trie;
-  typedef HASH_NAMESPACE::hash_map<wordType, wordTypeVector> word_map;
-  typedef CooccurrencePredicate self;
-  typedef AtomicPredicate super;
+    //   using word_trie = trie<wordType, wordTypeVector>;
+    using word_map = HASH_NAMESPACE::hash_map<wordType, wordTypeVector>;
+    using self = CooccurrencePredicate;
+    using super = AtomicPredicate;
 
 public:
-  CooccurrencePredicate(relativePosType r, featureIndexType fid): pos(r), feature_id(fid) {	
-	values.insert(make_pair(feature_id, r));
-  }
+    CooccurrencePredicate(relativePosType r, featureIndexType fid)
+      : pos(r)
+      , feature_id(fid) {
+        values.insert(std::make_pair(feature_id, r));
+    }
 
-  CooccurrencePredicate(const self& p): 
-	pos(p.pos),
-	feature_id(p.feature_id)
-  {}
+    CooccurrencePredicate(const self& p)
+      : pos(p.pos)
+      , feature_id(p.feature_id) {}
 
-  virtual ~CooccurrencePredicate() {}
+    ~CooccurrencePredicate() override = default;
 
-  virtual bool test(const wordType2D& corpus, int sample_ind, const wordType value) const {
-	wordType key = corpus[sample_ind][feature_id];
-	word_map& ngram = tries[word_map_index[make_pair(feature_id, pos)]];
-	
-	word_map::iterator i = ngram.find(key);
-	if(i != ngram.end()) {
-	  word_map::const_iterator::value_type p = *i;
-	  return binary_search(p.second.begin(), p.second.end(), value);
-	}
-	else
-	  return false;
-  }
+    bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
+        wordType key = corpus[sample_ind][feature_id];
+        word_map& ngram = tries[word_map_index[std::make_pair(feature_id, pos)]];
 
-  virtual double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& probs) const {
-	return 1.0 * (value==corpus[sample_ind+pos][feature_id]);
-  }
+        auto i = ngram.find(key);
+        if (i != ngram.end()) {
+            word_map::const_iterator::value_type p = *i;
+            return std::binary_search(p.second.begin(), p.second.end(), value);
+        }
+        {
+            return false;
+        }
+    }
 
-  self& operator= (const self& pred) {
-	if(this != &pred) {
-	  pos = pred.pos;
-	  feature_id = pred.feature_id;
-	}
-	return *this;
-  }
+    double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& probs) const override {
+        return 1.0 * (value == corpus[sample_ind + pos][feature_id]);
+    }
 
-  void identify_strings(const wordType1D& word_id, wordType_set& words) const;
-  void identify_strings(wordType word_id, wordType_set& words) const;
-  void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const;
-  void get_sample_differences(position_vector& positions) const {
-	positions.push_back(pos);
-  }
+    self& operator=(const self& pred) {
+        if (this != &pred) {
+            pos = pred.pos;
+            feature_id = pred.feature_id;
+        }
+        return *this;
+    }
 
-  string printMe(wordType sample) const;
+    void identify_strings(const wordType1D& word_id, wordType_set& words) const override;
+    void identify_strings(wordType word_id, wordType_set& words) const override;
+    void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const override;
+    void get_sample_differences(position_vector& positions) const override {
+        positions.push_back(pos);
+    }
 
-  void get_feature_ids(storage_vector& features) const {
-	features.push_back(feature_id);
-  }
+    std::string printMe(wordType element) const override;
 
-  void set_dependencies(vector<bit_vector>& dep) const {
-  }
+    void get_feature_ids(storage_vector& features) const override {
+        features.push_back(feature_id);
+    }
 
-  bool is_indexable() const {
-	return false;
-  }
+    void set_dependencies(std::vector<bit_vector>& dep) const override {
+    }
 
-  static void Initialize(const string& rule_file = "");
-  static bool IsInitialized;
-  typedef pair<featureIndexType, relativePosType> index_pair;
-  static indexed_map<index_pair, short int > word_map_index;
-  static set<index_pair> values;
-  static vector<word_map> tries;
+    bool is_indexable() const override {
+        return false;
+    }
+
+    static void Initialize(const std::string& rule_file = "");
+    static bool IsInitialized;
+    using index_pair = std::pair<featureIndexType, relativePosType>;
+    static indexed_map<index_pair, short int> word_map_index;
+    static std::set<index_pair> values;
+    static std::vector<word_map> tries;
+
 protected:
-  relativePosType pos;
-  featureIndexType feature_id;
+    relativePosType pos;
+    featureIndexType feature_id;
 };
 
-template <class type>
-ostream& operator <<(ostream& ostr, const vector<type>& sv) {
-  ostr << sv.size();
-  for(int i=0 ; i<sv.size() ; i++)
-	ostr << " " << sv[i];
-  return ostr;
+template<class type>
+std::ostream& operator<<(std::ostream& ostr, const std::vector<type>& sv) {
+    ostr << sv.size();
+    for (int i = 0; i < sv.size(); i++)
+        ostr << " " << sv[i];
+    return ostr;
 }
 
-template <class type>
-istream& operator >> (istream& istr, vector<type>& sv) {
-  int sz;
-  istr >> sz;
-  sv.resize(sz);
-  for(int i=0 ; i<sz ; i++)
-	istr >> sv[i];
-  return istr;
+template<class type>
+std::istream& operator>>(std::istream& istr, std::vector<type>& sv) {
+    int sz;
+    istr >> sz;
+    sv.resize(sz);
+    for (int i = 0; i < sz; i++)
+        istr >> sv[i];
+    return istr;
 }
 
 
