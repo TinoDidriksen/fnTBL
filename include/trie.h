@@ -170,7 +170,7 @@ struct __trie_node {
     }
 
     template<class __node_type>
-    void copy_support(const __node_type& /*node*/);
+    void copy_support(const __node_type& node);
 
     virtual void resize(int n) {
         vals.resize(n);
@@ -467,11 +467,11 @@ struct __trie_node {
         return vals.begin() + child_index_to_value_index(child_it - children.begin());
     }
 
-    virtual int read_in_binary_format(std::istream& /*istr*/);
-    virtual void write_in_binary_format(std::ostream& /*ostr*/) const;
+    virtual int read_in_binary_format(std::istream& istr);
+    virtual void write_in_binary_format(std::ostream& ostr) const;
 
-    virtual int read_in_text_format(std::istream& /*istr*/);
-    virtual void write_in_text_format(std::ostream& /*ostr*/) const;
+    virtual int read_in_text_format(std::istream& istr);
+    virtual void write_in_text_format(std::ostream& ostr) const;
 
     //   friend std::istream& operator >> (std::istream&, self&);
     //   friend std::ostream& operator << (std::ostream&, const self&);
@@ -697,7 +697,7 @@ struct __trie_node_base_iterator {
         }
     }
 
-    base_ptr node;
+    base_ptr node{ nullptr };
     iterator_stack_type& value_iters;
 
     __trie_node_base_iterator()
@@ -1614,8 +1614,8 @@ public:
     friend std::ostream& operator<<(std::ostream&, const self&);
     friend std::istream& operator>>(std::istream&, self&);
 
-    int read_in_binary_format(std::istream& /*istr*/);
-    void write_in_binary_format(std::ostream& /*ostr*/) const;
+    int read_in_binary_format(std::istream& istr);
+    void write_in_binary_format(std::ostream& ostr) const;
 
 protected:
     void construct_initial_level_iterators() const {

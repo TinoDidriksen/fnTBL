@@ -53,8 +53,8 @@ public:
 
     bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
         const Dictionary& dict = Dictionary::GetDictionary();
-        const std::string &infix = dict[value],
-                          &word = dict[corpus[sample_difference + sample_ind][feature_id]];
+        auto infix = dict[value],
+                          word = dict[corpus[sample_difference + sample_ind][feature_id]];
         static std::string temp;
         temp.assign(infix.begin(), infix.begin() + len);
 
@@ -64,19 +64,19 @@ public:
 
     std::string printMe(wordType instance) const override {
         const Dictionary& dict = Dictionary::GetDictionary();
-        const std::string& infix = dict[instance];
+        auto infix = dict[instance];
         static std::string infix_size;
         infix_size = itoa(len);
         if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
-            return PredicateTemplate::name_map[feature_id] + "::" + infix_size + "<>=" + infix;
+            return std::string(PredicateTemplate::name_map[feature_id]) + "::" + infix_size + "<>=" + std::string(infix);
         }
         {
-            return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" +
-                   infix_size + "<>=" + infix;
+            return std::string(PredicateTemplate::name_map[feature_id]) + "_" + itoa(sample_difference) + "::" +
+                   infix_size + "<>=" + std::string(infix);
         }
     }
 
-    void instantiate(const wordType2D& /*corpus*/, int sample_ind, wordTypeVector& /*instances*/) const override;
+    void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const override;
     void identify_strings(wordType word_id, wordType_set& words) const override;
 
     static word_list_rep_type feature_lookup;
@@ -122,7 +122,7 @@ inline void ContainsStringPredicate::instantiate(const wordType2D& corpus, int s
     words.clear();
     const Dictionary& dict = Dictionary::GetDictionary();
     wordType word_id = corpus[sample_ind + sample_difference][feature_id];
-    const std::string& word = dict[word_id];
+    auto word = dict[word_id];
     std::string::size_type word_len = word.size();
     static std::string temp;
 
@@ -144,8 +144,8 @@ inline void ContainsStringPredicate::instantiate(const wordType2D& corpus, int s
         }
     }
     else {
-        std::string::const_iterator last = word.begin() + (word_len - len + 1);
-        for (std::string::const_iterator i = word.begin(); i != last; ++i) {
+        auto last = word.begin() + (word_len - len + 1);
+        for (auto i = word.begin(); i != last; ++i) {
             temp.assign(i, i + len);
             temp += "<>";
             ON_DEBUG(assert(temp.size() == len + 2));
@@ -161,7 +161,7 @@ inline void ContainsStringPredicate::instantiate(const wordType2D& corpus, int s
 
 inline void ContainsStringPredicate::identify_strings(wordType word_id, wordType_set& words) const {
     Dictionary& dict = Dictionary::GetDictionary();
-    const std::string& word = dict[word_id];
+    auto word = dict[word_id];
     std::string::size_type word_len = word.size();
 
     if (word_len <= len) {
@@ -181,8 +181,8 @@ inline void ContainsStringPredicate::identify_strings(wordType word_id, wordType
     else {
         static wordType_set wrds;
         wrds.clear();
-        std::string::const_iterator last = word.begin() + (word_len - len + 1);
-        for (std::string::const_iterator i = word.begin(); i != last; ++i) {
+        auto last = word.begin() + (word_len - len + 1);
+        for (auto i = word.begin(); i != last; ++i) {
             temp.assign(i, i + len);
             temp += "<>";
             ON_DEBUG(assert(temp.size() == len + 2));

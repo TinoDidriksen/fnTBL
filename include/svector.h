@@ -161,8 +161,8 @@ public:
     }
 
 protected:
-    size_type _size;
-    type* data;
+    size_type _size{ 0 };
+    type* data{ nullptr };
 };
 
 template<class type, class size_type>

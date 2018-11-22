@@ -38,7 +38,7 @@
 
 class Dictionary {
 public:
-    using word_index_type = indexed_map<std::string, wordType>;
+    using word_index_type = indexed_map<std::string_view, wordType>;
     using iterator = word_index_type::iterator;
     using const_iterator = word_index_type::const_iterator;
     using word_trie = trie<char, bool>;
@@ -49,39 +49,34 @@ public:
 
     ~Dictionary() = default;
 
-    const std::string& getString(wordType index) const;
+	std::string_view getString(wordType index) const;
 
-    wordType reverse_access(const std::string& word) const {
+    wordType reverse_access(std::string_view word) const {
         return getIndex(word);
     }
 
-    const std::string& direct_access(wordType index) {
+    std::string_view direct_access(wordType index) {
         return getString(index);
     }
 
-    wordType operator[](const std::string& word) {
-        return getIndex(word);
-    }
+	wordType operator[](std::string_view word) const {
+		return getIndex(word);
+	}
 
-    wordType operator[](const std::string& word) const {
-        return getIndex(word);
-    }
-
-    const std::string& operator[](wordType index) const {
+    std::string_view operator[](wordType index) const {
         return getString(index);
     }
 
-    wordType getIndex(const std::string& word);
-    wordType getIndex(const std::string& word) const;
+	wordType getIndex(std::string_view word) const;
 
     wordType increaseCount(const std::string& word, unsigned int count = 1);
     wordType increaseCount(int index, unsigned int count = 1);
 
-    const_iterator find(const std::string& word) const {
+    const_iterator find(std::string_view word) const {
         return word_index.find(word);
     }
 
-    iterator find(const std::string& word) {
+    iterator find(std::string_view word) {
         return word_index.find(word);
     }
 
@@ -126,7 +121,7 @@ public:
         return word < num_classes;
     }
 
-    wordType insert(const std::string& word) {
+    wordType insert(std::string_view word) {
         wordType ind = word_index.insert(word);
         if (ind >= word_counts.size()) {
             word_counts.resize(ind + 1);
@@ -134,6 +129,15 @@ public:
         }
         return ind;
     }
+
+	wordType insert(const std::string& word) {
+		auto it = uniq_strings.insert(word);
+		return insert(std::string_view{ *it.first });
+	}
+
+	wordType insert(const char* word) {
+		return insert(std::string_view{ word });
+	}
 
     iterator begin() {
         return word_index.begin();
@@ -208,6 +212,9 @@ private:
     std::string spelling_of_unknown;
     word_trie direct_trie, reverse_trie;
     wordType _real_word_start_index, _real_word_end_index;
+
+    mmap_region data;
+	static std::unordered_set<std::string> uniq_strings;
 };
 
 #endif

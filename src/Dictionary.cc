@@ -31,9 +31,10 @@
 #include "Params.h"
 #include <numeric>
 
+std::unordered_set<std::string> Dictionary::uniq_strings;
 int Dictionary::num_classes = 0;
 
-const std::string& Dictionary::getString(wordType index) const {
+std::string_view Dictionary::getString(wordType index) const {
     if (index >= word_index.size() || index == unknown_index) {
         was_unknown = true;
         return spelling_of_unknown;
@@ -49,7 +50,7 @@ int Dictionary::getCounts(wordType index) {
     return word_counts[index];
 }
 
-wordType Dictionary::getIndex(const std::string& word) const {
+wordType Dictionary::getIndex(std::string_view word) const {
     int ind = word_index[word];
     if (ind == word_index.fake_index) {
         was_unknown = true;
@@ -57,18 +58,6 @@ wordType Dictionary::getIndex(const std::string& word) const {
     }
     was_unknown = false;
     return ind;
-}
-
-wordType Dictionary::getIndex(const std::string& word) {
-    wordType i = word_index[word];
-
-    if (i == word_index.fake_index) {
-        was_unknown = true;
-        return word_index.insert(word);
-    }
-
-    was_unknown = false;
-    return i;
 }
 
 wordType Dictionary::increaseCount(const std::string& word, unsigned int count) {
@@ -94,16 +83,16 @@ void Dictionary::writeToFile(const std::string& file) const {
 }
 
 void Dictionary::readFromFile(const std::string& file) {
+    std::string nf{ file };
     std::istream* istr;
     try {
-        // Open as-is
-        smart_open(istr, file);
+        // Open as-is...
+        smart_open(istr, nf);
     }
     catch (...) {
         // ...if that fails, open filename relative to cwd
-        std::string nf{ file };
-        size_t off = 0;
-        if ((off = file.find_last_of("\\/")) != std::string::npos) {
+        auto off = file.find_last_of("\\/");
+        if (off != std::string::npos) {
             nf = file.substr(off + 1);
         }
 
@@ -117,31 +106,79 @@ void Dictionary::readFromFile(const std::string& file) {
         }
     }
 
-    std::string line;
-    line_splitter ls;
+	delete istr;
+    data = mmap_region(nf);
 
-    while (istr->peek() == ('#')) {
-        getline(*istr, line);
-        ls.split(line);
-        if (ls[0] == "#") {
-            insert(line);
-            break;
+    auto& env = word_index.mdb();
+    env = lmdb::env::create();
+
+    struct stat _stat {};
+    stat(nf.c_str(), &_stat);
+    auto data_mdb = _stat.st_mtime;
+    auto data_size = _stat.st_size;
+
+    std::string tmp{ nf };
+    tmp.append(".mdb");
+    auto stat_err = stat(tmp.c_str(), &_stat);
+
+    env.open(tmp.c_str(), MDB_NOSUBDIR | MDB_WRITEMAP | MDB_NOSYNC, 0664);
+    env.set_mapsize(data_size * 4);
+
+    // If data file is newer or the database is empty, (re)create database
+    MDB_stat mdbs;
+    lmdb::env_stat(env, &mdbs);
+    if (stat_err != 0 || data_mdb > _stat.st_mtime || mdbs.ms_entries == 0) {
+        auto wtxn = lmdb::txn::begin(env);
+        auto dbi = lmdb::dbi::open(wtxn);
+        dbi.drop(wtxn); // Drop all existing entries, if any
+        wtxn.commit();
+
+        lmdb_writer wr(env);
+        lmdb::val key;
+        lmdb::val value;
+        uint32_t num_unique{ 0 };
+
+        auto insert_line = [&](std::string_view line) {
+            key.assign(line.data(), line.size());
+            value.assign(&num_unique, sizeof(num_unique));
+            if (wr.dbi.put(wr.txn, key, value, MDB_NODUPDATA | MDB_NOOVERWRITE)) {
+                ++num_unique;
+            }
+        };
+
+        line_splitter_view ls;
+
+        for (std::string_view line{ nextline(data) }; !line.empty(); line = nextline(data, line)) {
+            if (line[0] == '#') {
+                ls.split(line);
+
+                if (ls[0] == "#") {
+                    insert_line(line);
+                }
+                else if (ls[0] == "#real_word_indices:") {
+                    ::put(wr, "__REAL_WORD_START_INDEX", atoi1(ls[1]));
+                    ::put(wr, "__REAL_WORD_END_INDEX", atoi1(ls[2]));
+                }
+                else if (ls[0] == "#number_of_classes:") {
+                    ::put(wr, "__NUM_CLASSES", atoi1(ls[1]));
+                }
+            }
+            else {
+                insert_line(line);
+            }
         }
-        if (ls[0] == "#real_word_indices:") {
-            _real_word_start_index = atoi1(ls[1]);
-            _real_word_end_index = atoi1(ls[2]);
-        }
-        else if (ls[0] == "#number_of_classes:") {
-            num_classes = atoi1(ls[1]);
-        }
-        else {
-            std::cerr << "Unknown meta directive in the vocabulary file: " << ls[0] << "!!" << std::endl;
-        }
+
+        key.assign("__NUM_ENTRIES");
+        value.assign(&num_unique, sizeof(num_unique));
+        wr.dbi.put(wr.txn, key, value, MDB_NODUPDATA | MDB_NOOVERWRITE);
+
+        wr.txn.commit();
     }
 
-    while (std::getline(*istr, line)) {
-        insert(line);
-    }
+    word_index.mdb_done();
 
-    delete istr;
+    auto& rd = word_index.mdb_rd();
+    _real_word_start_index = ::get(rd, "__REAL_WORD_START_INDEX");
+    _real_word_end_index = ::get(rd, "__REAL_WORD_END_INDEX");
+    num_classes = ::get(rd, "__NUM_CLASSES");
 }

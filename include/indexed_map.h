@@ -32,10 +32,59 @@
 #ifndef __indexed_map_h__
 #define __indexed_map_h__
 
+#include <memory>
 #include <vector>
 #include "hash_wrapper.h"
 #include <map>
+#include <lmdb++.h>
 
+struct lmdb_reader {
+    lmdb::txn txn;
+    lmdb::dbi dbi;
+
+    lmdb_reader(lmdb::env& env)
+        : txn(lmdb::txn::begin(env, nullptr, MDB_RDONLY))
+        , dbi(lmdb::dbi::open(txn))
+    {}
+};
+
+struct lmdb_writer {
+    lmdb::txn txn;
+    lmdb::dbi dbi;
+
+    lmdb_writer(lmdb::env& env)
+        : txn(lmdb::txn::begin(env))
+        , dbi(lmdb::dbi::open(txn))
+    {}
+};
+
+template<typename K>
+inline uint32_t get(lmdb_reader& rd, const K& key) {
+    throw new std::runtime_error("NOT IMPLEMENTED");
+}
+
+inline uint32_t get(lmdb_reader& rd, std::string_view key) {
+    if (key.empty()) {
+        return std::numeric_limits<uint32_t>::max();
+    }
+    lmdb::val k{ key.data(), key.size() };
+    lmdb::val v{};
+    auto rv = rd.dbi.get(rd.txn, k, v);
+    if (!rv) {
+        return std::numeric_limits<uint32_t>::max();
+    }
+    return *reinterpret_cast<uint32_t*>(v.data());
+}
+
+inline uint32_t get(lmdb_reader& rd, const char* key) {
+    return ::get(rd, std::string_view{key});
+}
+
+inline bool put(lmdb_writer& wr, std::string_view k, uint32_t v) {
+    lmdb::val key(k.data(), k.size());
+    lmdb::val value(&v, sizeof(v));
+    return wr.dbi.put(wr.txn, key, value, MDB_NODUPDATA | MDB_NOOVERWRITE);
+}
 
 template<class index2, class index1 = unsigned, class map_type = HASH_NAMESPACE::hash_map<index2, index1>>
 class indexed_map {
@@ -53,7 +102,7 @@ public:
         using value_type = Value;
         using difference_type = int;
         using reference = Ref;
-        using pointer = const std::basic_string<char, std::char_traits<char>, std::allocator<char>>*;
+        using pointer = Value*;
         using self = generic_iterator<Value, Ref, Ptr, underlying_iterator>;
 
         generic_iterator(underlying_iterator i)
@@ -65,7 +114,7 @@ public:
         ~generic_iterator() = default;
 
         Ref operator*() {
-            return **it;
+            return *it;
         }
 
         Ptr operator->() {
@@ -110,8 +159,8 @@ public:
         underlying_iterator it;
     };
 
-    using iterator = generic_iterator<index2, index2&, index2*, typename std::vector<index2*>::iterator>;
-    using const_iterator = generic_iterator<const index2, const index2&, const index2*, typename std::vector<index2*>::const_iterator>;
+    using iterator = generic_iterator<index2, index2&, index2, typename std::vector<index2>::iterator>;
+    using const_iterator = generic_iterator<const index2, const index2&, const index2, typename std::vector<index2>::const_iterator>;
 
     indexed_map()
       : fake_index(-1) {}
@@ -125,16 +174,23 @@ private:
 
 public:
     index1 insert(const index2& elem) {
+        if (db.handle()) {
+            auto v = ::get(*rd, elem);
+            if (v != std::numeric_limits<uint32_t>::max()) {
+                return v;
+            }
+        }
+
         auto f = index_map.find(elem);
         if (f == index_map.end()) {
             if (!available_inds.empty()) {
                 f = index_map.insert(std::make_pair(elem, available_inds.back())).first;
-                storage[available_inds.back()] = &const_cast<index2&>(f->first);
+                storage[available_inds.back()] = f->first;
                 available_inds.pop_back();
             }
             else {
-                f = index_map.insert(std::make_pair(elem, storage.size())).first;
-                storage.push_back(&const_cast<index2&>(f->first));
+                f = index_map.insert(std::make_pair(elem, static_cast<index1>(storage.size()))).first;
+                storage.push_back(f->first);
             }
         }
         return f->second;
@@ -145,13 +201,18 @@ public:
     }
 
     index1 reverse_access(const index2& elem) const {
+        if (db.handle()) {
+            auto v = ::get(*rd, elem);
+            if (v != std::numeric_limits<uint32_t>::max()) {
+                return v;
+            }
+        }
+
         auto f = index_map.find(elem);
         if (f == index_map.end()) {
             return -1;
         }
-        {
-            return f->second;
-        }
+        return f->second;
     }
 
     index1 operator[](const index2& elem) const {
@@ -163,7 +224,7 @@ public:
             return fake_elem;
         }
 
-        return *storage[ind];
+        return storage[ind];
     }
 
     const index2& operator[](index1 ind) const {
@@ -174,7 +235,7 @@ public:
         if (ind == fake_index || ind >= storage.size())
             return fake_elem;
 
-        return *storage[ind];
+        return storage[ind];
     }
 
     const index2& operator[](index1 ind) {
@@ -182,11 +243,11 @@ public:
     }
 
     void remove_element(const index2& elem) {
-        typename map_type::iterator f = index_map.find(elem);
+        auto f = index_map.find(elem);
         if (f != index_map.end()) {
             available_inds.push_back(f->second);
             index_map.erase(f);
-            storage[f->second] = 0;
+            storage[f->second] = index2{};
         }
     }
 
@@ -211,9 +272,7 @@ public:
         if (it == index_map.end()) {
             return end();
         }
-        {
-            return storage.begin() + it->second;
-        }
+        return storage.begin() + it->second;
     }
 
     const_iterator find(const index2& elem) const {
@@ -221,9 +280,7 @@ public:
         if (it == index_map.end()) {
             return end();
         }
-        {
-            return storage.begin() + it->second;
-        }
+        return storage.begin() + it->second;
     }
 
     //   template <class iterator_type>
@@ -232,7 +289,7 @@ public:
     //   }
 
     void erase(index1 ind) {
-        remove_element(*storage[ind]);
+        remove_element(storage[ind]);
     }
 
     void clear() {
@@ -241,20 +298,49 @@ public:
     }
 
     void destroy() {
-        std::vector<index2*> tmp1;
-        storage.swap(tmp1);
-        std::vector<index1> tmp2;
-        available_inds.swap(tmp2);
-        map_type tmp3;
-        index_map.swap(tmp3);
+        storage.clear();
+        available_inds.clear();
+        index_map.clear();
+    }
+
+    auto& mdb() {
+        return db;
+    }
+
+    void mdb_done() {
+        db.sync();
+
+        rd = std::make_unique<lmdb_reader>(db);
+        db_size = ::get(*rd, "__NUM_ENTRIES");
+        storage.resize(db_size);
+
+        auto cursor = lmdb::cursor::open(rd->txn, rd->dbi);
+        lmdb::val key, value;
+        while (cursor.get(key, value, MDB_NEXT)) {
+            std::string_view k{key.data(), key.size()};
+            if (k[0] == '_' && k[1] == '_') {
+                continue;
+            }
+            uint32_t v = *reinterpret_cast<uint32_t*>(value.data());
+            storage[v] = k;
+        }
+        cursor.close();
+    }
+
+    auto& mdb_rd() {
+        return *rd;
     }
 
     index2 fake_elem;
     index1 fake_index;
 
 protected:
+    lmdb::env db{ nullptr };
+    std::unique_ptr<lmdb_reader> rd;
+    uint32_t db_size{ 0 };
+
     map_type index_map;
-    std::vector<index2*> storage;
+    std::vector<index2> storage;
     std::vector<index1> available_inds;
 };
 

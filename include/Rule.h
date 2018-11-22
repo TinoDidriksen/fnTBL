@@ -48,7 +48,7 @@ public:
     Rule(int p_tid, int t_tid, const wordType1D& p_tok, const wordType1D& t_tok);
     Rule(int p_tid, int t_tid, const wordTypeVector& p_tok, const wordTypeVector& t_tok);
     // this constructor is used when we're reading in a rule from a file
-    Rule(string1D& rule_components);
+    Rule(string1D_v& rule_components);
     // and this one is used when we're copying a rule.
     Rule(const Rule& anotherRule) = default;
 
@@ -108,8 +108,8 @@ public:
     int hashIndex{ 0 };
 
     ON_DEBUG(string rule_name);
-    mutable scoreType good;
-    mutable scoreType bad;
+    mutable scoreType good{ 0 };
+    mutable scoreType bad{ 0 };
 
     // checks if two rules are equal.
     bool operator<(const Rule& rule) const {

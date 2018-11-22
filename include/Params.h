@@ -125,6 +125,6 @@ public:
         return p;
     }
 
-    friend std::ostream& operator<<(std::ostream& /*ostr*/, const Params& /*p*/);
+    friend std::ostream& operator<<(std::ostream& ostr, const Params& p);
 };
 #endif

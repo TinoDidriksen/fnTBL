@@ -359,8 +359,7 @@ public:
         switch (type) {
         case 0:
             for (int i = 0; i < data.slist_field.size(); i++) {
-                slist_type temp = data.slist_field[i];
-                temp.swap(data.slist_field[i]);
+                data.slist_field[i].shrink_to_fit();
             }
             break;
         case 2:

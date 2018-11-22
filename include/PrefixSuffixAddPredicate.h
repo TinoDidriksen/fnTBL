@@ -57,10 +57,10 @@ public:
 
     bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
         const Dictionary& dict = Dictionary::GetDictionary();
-        const std::string& xfix = dict[value];
+        auto xfix = dict[value];
         ON_DEBUG(
           assert(len + 2 == xfix.size()));
-        const std::string& word = dict[corpus[sample_difference + sample_ind][feature_id]];
+        auto word = dict[corpus[sample_difference + sample_ind][feature_id]];
 
         static std::string str;
         str.resize(0);
@@ -84,21 +84,21 @@ public:
 
     std::string printMe(wordType instance) const override {
         Dictionary& dict = Dictionary::GetDictionary();
-        const std::string& addition = dict[instance];
+        auto addition = dict[instance];
         std::string add_size = itoa(len);
         if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
-            return PredicateTemplate::name_map[feature_id] + "::" +
-                   (is_prefix ? add_size + "++" : "++" + add_size) + "=" + addition;
+            return std::string(PredicateTemplate::name_map[feature_id]) + "::" +
+                   (is_prefix ? add_size + "++" : "++" + add_size) + "=" + std::string(addition);
         }
         {
-            return PredicateTemplate::name_map[feature_id] + "_" +
+            return std::string(PredicateTemplate::name_map[feature_id]) + "_" +
                    itoa(sample_difference) + "::" +
-                   (is_prefix ? add_size + "++" : "++" + add_size) + "=" + addition;
+                   (is_prefix ? add_size + "++" : "++" + add_size) + "=" + std::string(addition);
         }
     }
 
 
-    void instantiate(const wordType2D& /*corpus*/, int sample_ind, wordTypeVector& instances) const override;
+    void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const override;
     void identify_strings(wordType word_id, wordType_set& words) const override;
 
     static word_list_rep_type feature_lookup;
@@ -142,7 +142,7 @@ public:
 inline void PrefixSuffixAddPredicate::instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const {
     Dictionary& dict = Dictionary::GetDictionary();
     wordType word_id = corpus[sample_ind + sample_difference][feature_id];
-    const std::string& word = dict[word_id];
+    auto word = dict[word_id];
     std::string::size_type word_len = word.size();
     //   if(word_len<len)
     // 	return;
@@ -291,7 +291,7 @@ inline void PrefixSuffixAddPredicate::instantiate(const wordType2D& corpus, int 
 
 inline void PrefixSuffixAddPredicate::identify_strings(wordType word_id, wordType_set& words) const {
     Dictionary& dict = Dictionary::GetDictionary();
-    const std::string& word = dict[word_id];
+    auto word = dict[word_id];
     std::string::size_type word_len = word.size();
     static std::vector<char> v;
     v.resize(word_len);

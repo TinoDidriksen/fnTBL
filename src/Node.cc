@@ -210,7 +210,7 @@ void Node::createLeaf() {
     for (example_index1D::iterator example = examples.begin();
          example != examples.end(); ++example) {
         if (truth_sep != "" && corpus[example->first][example->second][TargetTemplate::TRUTH_START] >= Dictionary::num_classes) {
-            static line_splitter ts(truth_sep);
+            static line_splitter_view ts(truth_sep);
             static const Dictionary& dict = Dictionary::GetDictionary();
             ts.split(dict[corpus[example->first][example->second][TargetTemplate::TRUTH_START]]);
             for (int it = 0; it < ts.size(); it++)
@@ -312,7 +312,7 @@ void Node::addSimpleTemplates(int1D& simple_predicate_template_ids,
         string1D::const_iterator si;
         if ((si = find(PredicateTemplate::TemplateNames.begin(), PredicateTemplate::TemplateNames.end(), PredicateTemplate::name_map[i])) ==
             PredicateTemplate::TemplateNames.end()) {
-            PredicateTemplate::TemplateNames.push_back(PredicateTemplate::name_map[i]);
+            PredicateTemplate::TemplateNames.push_back(std::string(PredicateTemplate::name_map[i]));
             v[0] = PredicateTemplate::name_map[i];
             PredicateTemplate pt(v);
             templates.push_back(pt);
@@ -323,7 +323,7 @@ void Node::addSimpleTemplates(int1D& simple_predicate_template_ids,
         }
 
         RuleTemplate::AddTemplate(simple_truth_template_ids[0], simple_predicate_template_ids.back(),
-          PredicateTemplate::name_map[i] + " " + TargetTemplate::name_map.direct_access(0) + "1");
+			std::string(PredicateTemplate::name_map[i]) + " " + std::string(TargetTemplate::name_map.direct_access(0)) + "1");
     }
 }
 
@@ -437,7 +437,7 @@ int Node::findBestRule(rule_hash_map& dt_rules,
             else {
                 for (int1D::const_iterator k = j->second.begin(); k != j->second.end(); ++k) {
                     if (truth_sep != "" && corpus[i->first][j->first][TargetTemplate::TRUTH_START] >= Dictionary::num_classes) {
-                        static line_splitter ts(truth_sep);
+                        static line_splitter_view ts(truth_sep);
                         static const Dictionary& dict = Dictionary::GetDictionary();
                         ts.split(dict[corpus[i->first][j->first][TargetTemplate::TRUTH_START]]);
                         for (int it = 0; it < ts.size(); it++)
@@ -612,7 +612,7 @@ std::string Node::probString() const {
 
     for (int i = 0; i < Dictionary::num_classes; i++) {
         if (fabs(probs[temp_order[i]]) > 1e-6) {
-            probString += " " + dict[temp_order[i]];
+            probString += " " + std::string(dict[temp_order[i]]);
             char probLine[1024];
             sprintf(probLine, " (%f)", probs[temp_order[i]]);
             probString += probLine;

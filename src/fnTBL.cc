@@ -65,6 +65,7 @@ wordType3D corpus;
 
 wordType3DVector ruleTrace;
 rule_vector allRules;
+std::string allRules_data;
 bool v_flag;
 bool p_flag;
 bool soft_probabilities;
@@ -110,20 +111,19 @@ inline bool is_state(featureIndexType pos) {
 void readInRules(char* fileName) {
     std::istream* in;
     smart_open(in, fileName);
-    char in_line[1024];
+	allRules_data.assign(std::istreambuf_iterator<char>{*in}, {});
 
-    while (in->getline(in_line, 1024, '\n')) {
-        if (in_line[0] == '#') {
+	for (std::string_view line{ nextline(allRules_data) }; !line.empty(); line = nextline(allRules_data, line)) {
+        if (line.empty() || line[0] == '#') {
             continue;
         }
 
-        std::string line(in_line);
         std::string::size_type pos;
         if ((pos = line.find("RULE: ")) != line.npos) {
-            line.erase(0, pos + 6);
+            line = line.substr(pos + 6);
         }
 
-        line_splitter splitLine;
+        line_splitter_view splitLine;
         splitLine.split(line);
 
         allRules.push_back(Rule(splitLine.data()));
@@ -473,7 +473,7 @@ int main(int argc, char* argv[]) {
         filter.insert(rl->predicate.tokens[rl->predicate.order[0]]);
     }
 
-    std::ostream* errstr;
+	std::ostream* errstr{nullptr};
     if (printErrors) {
         smart_open(errstr, error_file);
     }
@@ -489,7 +489,7 @@ int main(int argc, char* argv[]) {
             for (int j = 0; j < corpus[i].size(); j++)
                 ruleTrace[i].resize(corpus[i].size());
 
-        ticker tk("Rules applied:", 8);
+        //ticker tk("Rules applied:", 8);
         int ruleID = 0;
 
         if (printErrors) {
@@ -510,9 +510,9 @@ int main(int argc, char* argv[]) {
                 runOneRule(*thisRule, ruleID++);
                 if (printErrors)
                     *errstr << general_error << std::endl;
-                tk.tick();
+                //tk.tick();
             }
-            tk.clear();
+            //tk.clear();
 
             if (!soft_probabilities) {
                 computeProbs(t);
@@ -527,9 +527,9 @@ int main(int argc, char* argv[]) {
                 runOneRule(*thisRule, ruleID++);
                 if (printErrors)
                     *errstr << general_error << std::endl;
-                tk.tick();
+                //tk.tick();
             }
-            tk.clear();
+            //tk.clear();
 
             if (generate_tree) {
                 TBLTree t;
@@ -557,8 +557,9 @@ int main(int argc, char* argv[]) {
             corpus[i].resize(2000);
             wordType1D p = corpus[i][0] = new wordType[200 * feature_set_size];
 
-            for (int j = 1; j < corpus[i].size(); j++)
+            for (int j = 1; j < corpus[i].size(); j++) {
                 corpus[i][j] = p + feature_set_size * j;
+            }
         }
 
         if (printErrors) {

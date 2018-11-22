@@ -63,13 +63,13 @@ Rule::Rule(int p_tid, int t_tid, const wordTypeVector& p_tok, const wordTypeVect
 }
 // initializes a rule.
 // This constructor is used when we're reading in a rule in from a file.
-Rule::Rule(string1D& rule_components)
+Rule::Rule(string1D_v& rule_components)
   : target(0) {
-    static std::string arrow = "=>";
-    string1D::iterator pos = find(rule_components.begin(), rule_components.end(), arrow);
+    static std::string_view arrow = "=>";
+    auto pos = find(rule_components.begin(), rule_components.end(), arrow);
     if (pos == rule_components.end()) {
         std::cerr << "The rule \"";
-        std::copy(rule_components.begin(), rule_components.end(), std::ostream_iterator<std::string>(std::cerr, " "));
+        std::copy(rule_components.begin(), rule_components.end(), std::ostream_iterator<std::string_view>(std::cerr, " "));
         std::cerr << "\" is corrupt (does not contain the string =>). Please replace and restart." << std::endl;
         exit(1323);
     }

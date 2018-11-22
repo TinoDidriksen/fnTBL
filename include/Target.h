@@ -65,14 +65,14 @@ public:
         if (truth_sep.empty()) { // the simple case - there is only one true value per example
             return val == truth;
         }
-        static line_splitter ts(truth_sep);
+        static line_splitter_view ts(truth_sep);
         static const Dictionary& dict = Dictionary::GetDictionary();
         ts.split(dict[truth]);
         if (ts.size() == 1) {
             return val == truth;
         }
-        const std::string& val_str = dict[val];
-        for (const auto& t : ts) {
+        auto val_str = dict[val];
+        for (auto& t : ts) {
             if (val_str == t) {
                 return true;
             }

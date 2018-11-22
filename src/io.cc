@@ -196,6 +196,7 @@ void studyData(const std::string& filename, const std::string& train_filename) {
                 std::cin >> answer;
                 no++;
             } while (answer != "y" && answer != "Y" && answer != "n" && answer != "N");
+
             if (answer == "n" || answer == "N") {
                 std::cerr << "Wise choice." << std::endl
                           << "Please correct the problem and restart." << std::endl;
@@ -218,9 +219,11 @@ void studyData(const std::string& filename, const std::string& train_filename) {
     ticker tk("Sentences read:", 1024);
 
     std::list<int> lst;
-    for (int i = 0; i < SubwordPartPredicate::feature_len_pair_list.size(); i++)
-        if (std::find(lst.begin(), lst.end(), SubwordPartPredicate::feature_len_pair_list[i].first) == lst.end())
+    for (int i = 0; i < SubwordPartPredicate::feature_len_pair_list.size(); i++) {
+        if (std::find(lst.begin(), lst.end(), SubwordPartPredicate::feature_len_pair_list[i].first) == lst.end()) {
             lst.insert(lst.end(), SubwordPartPredicate::feature_len_pair_list[i].first);
+        }
+    }
 
     bool with_train_file = !train_filename.empty();
     if (with_train_file) {
@@ -228,18 +231,20 @@ void studyData(const std::string& filename, const std::string& train_filename) {
 
         wordType real_start = dict.real_word_start_index(), real_end = dict.real_word_end_index();
 
-        if (lst.size() > 0)
+        if (lst.size() > 0) {
             for (int i = real_start; i != real_end; ++i) {
                 real_words.insert(dict[i]);
             }
+        }
     }
 
     if (Params::GetParams()["LARGE_WORD_VOCABULARY"] != "") {
         std::istream* istr;
         smart_open(istr, Params::GetParams()["LARGE_WORD_VOCABULARY"]);
         std::string line;
-        while (std::getline(*istr, line))
+        while (std::getline(*istr, line)) {
             real_words.insert(line);
+        }
         delete istr;
     }
 
@@ -256,12 +261,15 @@ void studyData(const std::string& filename, const std::string& train_filename) {
                 words.insert(ls[i]);
             }
 
-            if (!with_train_file)
-                for (std::list<int>::iterator p = lst.begin(); p != lst.end(); ++p)
+            if (!with_train_file) {
+                for (std::list<int>::iterator p = lst.begin(); p != lst.end(); ++p) {
                     real_words.insert(ls[*p]);
+                }
+            }
 
-            if (truth_sep == "")
+            if (truth_sep == "") {
                 classifications.insert(ls[ls.size() - 1]);
+            }
             else {
                 static line_splitter ts(truth_sep);
                 ts.split(ls[ls.size() - 1]);
@@ -311,13 +319,13 @@ void studyData(const std::string& filename, const std::string& train_filename) {
 
     dict.set_start();
     for (int1D::iterator i = vals.begin(); i != vals.end(); ++i) {
-        const std::string& word = real_words[*i];
+        auto word = real_words[*i];
         if (!with_train_file)
             dict.insert(word);
         if (V_flag >= 5)
             std::cerr << *i << " " << word << std::endl;
-        dict.insert_in_direct_trie(word);
-        dict.insert_in_reverse_trie(word);
+        dict.insert_in_direct_trie(std::string(word));
+        dict.insert_in_reverse_trie(std::string(word));
     }
     dict.set_end();
 
@@ -455,7 +463,7 @@ void generate_index(const std::set<int>& filter) {
 
     Dictionary& dict = Dictionary::GetDictionary();
     static wordType fake_index = dict["ZZZ"];
-    ticker tk1("Processed lines:", 128);
+    //ticker tk1("Processed lines:", 128);
     static std::set<int> seen;
     corpusIndex.resize(dict.size());
 
@@ -502,18 +510,22 @@ void generate_index(const std::set<int>& filter) {
             for (int k = TargetTemplate::STATE_START; k < TargetTemplate::STATE_START + TargetTemplate::TRUTH_SIZE; k++)
                 classifIndex.insert(vect[k], i, static_cast<unsigned short>(j));
         }
-        if (!with_filter)
+        /*
+        if (!with_filter) {
             tk1.tick();
+        }
+        //*/
 
         for (; j <= sent_max + PredicateTemplate::MaxForwardLookup; j++) {
             corpusIndex.insert(fake_index, i, static_cast<unsigned short>(j));
             classifIndex.insert(fake_index, i, static_cast<unsigned short>(j));
         }
     }
-
+    /*
     if (!with_filter) {
         tk1.clear();
     }
+    //*/
 
     corpusIndex.finalize();
     defaultIndex.finalize();

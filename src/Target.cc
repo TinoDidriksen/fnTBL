@@ -64,7 +64,7 @@ void TargetTemplate::instantiate(const wordType1D& corpus, wordType2DVector& ins
         static wordType2DVector targets;
         targets.resize(positions.size());
         // Big assumption here: the TRUTH_SEPARATOR variable has only 1 character !!
-        static line_splitter ts(truth_sep);
+        static line_splitter_view ts(truth_sep);
         int pos = 0, prod = 1;
         static const Dictionary& dict = Dictionary::GetDictionary();
         for (pos_vector::iterator i = positions.begin(); i != positions.end(); ++i, ++pos) {

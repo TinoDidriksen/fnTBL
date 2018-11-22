@@ -100,8 +100,8 @@ public:
     void construct_tree();
     void gather_leaves();
 
-    friend std::ostream& operator<<(std::ostream& ostr, const self& /*tree*/);
-    friend std::istream& operator>>(std::istream& istr, self& /*tree*/);
+    friend std::ostream& operator<<(std::ostream& ostr, const self& tree);
+    friend std::istream& operator>>(std::istream& istr, self& tree);
 
     static int GetRuleIndex(const Rule& rule) {
         rule_map_type::iterator i = rule_index.find(rule);

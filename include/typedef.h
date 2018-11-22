@@ -33,6 +33,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <string_view>
 
 using intType = int;
 using scoreType = int; // the type of score for good/bad
@@ -60,6 +61,7 @@ using featureIndexType1D = std::vector<featureIndexType>;
 using featureIndexType2D = std::vector<featureIndexType1D>;
 
 using string1D = std::vector<std::string>;
+using string1D_v = std::vector<std::string_view>;
 using string_set = std::set<std::string>;
 using wordType_set = std::set<wordType>;
 

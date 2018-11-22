@@ -297,11 +297,11 @@ public:
         t.push_back(x);
     }
 
-    virtual int read_in_binary_format(std::istream& /*istr*/);
-    virtual void write_in_binary_format(std::ostream& /*ostr*/) const;
+    virtual int read_in_binary_format(std::istream& istr);
+    virtual void write_in_binary_format(std::ostream& ostr) const;
 
-    virtual int read_in_text_format(std::istream& /*istr*/);
-    virtual void write_in_text_format(std::ostream& /*ostr*/) const;
+    virtual int read_in_text_format(std::istream& istr);
+    virtual void write_in_text_format(std::ostream& ostr) const;
 
     friend std::ostream& operator<<(std::ostream& ostr, const self& v) {
         v.write_in_text_format(ostr);

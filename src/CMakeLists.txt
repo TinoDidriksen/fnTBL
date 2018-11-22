@@ -50,6 +50,7 @@ set(FNTBL_HEADERS
 	${CMAKE_SOURCE_DIR}/include/io.h
 	${CMAKE_SOURCE_DIR}/include/line_splitter.h
 	${CMAKE_SOURCE_DIR}/include/linear_map.h
+	${CMAKE_SOURCE_DIR}/include/lmdb++.h
 	${CMAKE_SOURCE_DIR}/include/m_pair.h
 	${CMAKE_SOURCE_DIR}/include/my_bit_vector.h
 	${CMAKE_SOURCE_DIR}/include/svector.h
@@ -84,6 +85,6 @@ include_directories(
 	)
 
 add_executable(fnTBL ${FNTBL_SOURCES})
-#target_link_libraries(fnTBL PRIVATE lmdb)
+target_link_libraries(fnTBL PRIVATE lmdb)
 
 install(TARGETS fnTBL RUNTIME DESTINATION bin)

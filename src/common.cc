@@ -47,14 +47,6 @@ const std::string& ftoa(double f, const std::string& format) {
     return r;
 }
 
-int atoi1(const std::string& number) {
-    return atoi(number.c_str());
-}
-
-double atof1(const std::string& number) {
-    return atof(number.c_str());
-}
-
 #include "Params.h"
 #include <ctime>
 void log_me_in(int argc, char* argv[]) {

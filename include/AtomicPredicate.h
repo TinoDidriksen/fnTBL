@@ -43,8 +43,8 @@ public:
     virtual ~AtomicPredicate() = default;
 
     // The test:
-    virtual bool test(const wordType2D& /*unused*/, int /*unused*/, wordType /*unused*/) const = 0;
-    virtual double test(const wordType2D& /*unused*/, int /*unused*/, wordType /*unused*/, const float2D& context_prob) const = 0;
+    virtual bool test(const wordType2D&, int, wordType) const = 0;
+    virtual double test(const wordType2D&, int, wordType, const float2D& context_prob) const = 0;
     // The instanciation of features
     virtual void instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const = 0;
     virtual void identify_strings(const wordType1D& word_id, wordType_set& words) const = 0;
@@ -52,17 +52,17 @@ public:
 
     virtual std::string printMe(wordType wrd) const = 0;
 
-    virtual void set_dependencies(std::vector<bit_vector>& /*unused*/) const = 0;
+    virtual void set_dependencies(std::vector<bit_vector>&) const = 0;
 
     virtual void get_sample_differences(position_vector& positions) const = 0;
     virtual void get_feature_ids(storage_vector& features) const = 0;
     virtual bool is_indexable() const = 0;
 };
 
-inline bool AtomicPredicate::test(const wordType2D& /*unused*/, int /*unused*/, const wordType /*unused*/) const {
+inline bool AtomicPredicate::test(const wordType2D&, int, const wordType) const {
     return false;
 }
-inline double AtomicPredicate::test(const wordType2D& /*unused*/, int /*unused*/, const wordType /*unused*/, const float2D& /*unused*/) const {
+inline double AtomicPredicate::test(const wordType2D&, int, const wordType, const float2D&) const {
     return 0;
 }
 
@@ -77,7 +77,7 @@ inline std::string AtomicPredicate::printMe(wordType wrd) const {
     return "";
 }
 
-inline void AtomicPredicate::set_dependencies(std::vector<bit_vector>& /*unused*/) const {
+inline void AtomicPredicate::set_dependencies(std::vector<bit_vector>&) const {
 }
 
 inline bool AtomicPredicate::is_indexable() const {

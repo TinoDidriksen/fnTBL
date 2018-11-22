@@ -55,7 +55,7 @@ public:
 
     bool test(const wordType2D& corpus, int sample_ind, wordType value) const override = 0;
 
-    double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& /*unused*/) const override {
+    double test(const wordType2D& corpus, int sample_ind, const wordType value, const float2D& unused) const override {
         if (test(corpus, sample_ind, value)) {
             return 1.0;
         }

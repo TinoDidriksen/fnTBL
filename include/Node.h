@@ -94,18 +94,18 @@ public:
     void createLeaf();
     void updateCounts();
     void growDT();
-    void growDT(rule_hash_map& /*dt_rules*/, const rule_list_type& /*rules_applied*/);
+    void growDT(rule_hash_map& dt_rules, const rule_list_type& rules_applied);
     void computeEntropy();
 
 protected:
-    void createRules(rule_hash_map& /*dt_rules*/, rule_list_type& /*node_rules_applied*/);
+    void createRules(rule_hash_map& dt_rules, rule_list_type& node_rules_applied);
 
-    int findBestRule(rule_hash_map& /*dt_rules*/, const rule_list_type& /*node_rules_applied*/);
+    int findBestRule(rule_hash_map& dt_rules, const rule_list_type& node_rules_applied);
     void splitExamplesByRule(int bestRuleID, const rule_list_type& rules_applied);
 
 public:
-    static void addSimpleTemplates(int1D& /*simple_predicate_template_ids*/, int1D& /*simple_truth_template_ids*/);
-    void computeProbs(const example_index& /*example*/, const float2D& hypothesis);
+    static void addSimpleTemplates(int1D& simple_predicate_template_ids, int1D& simple_truth_template_ids);
+    void computeProbs(const example_index& example, const float2D& hypothesis);
 
     Node& operator=(const Node& node) {
         if (this != &node) {
@@ -122,8 +122,8 @@ public:
         return *this;
     }
 
-    friend std::ostream& operator<<(std::ostream& /*ostr*/, const self& /*nd*/);
-    friend std::istream& operator>>(std::istream& /*istr*/, self& /*nd*/);
+    friend std::ostream& operator<<(std::ostream& ostr, const self& nd);
+    friend std::istream& operator>>(std::istream& istr, self& nd);
 
     void clearCountsAndProbs() {
         int1D ctemp;
@@ -133,7 +133,7 @@ public:
     }
 
 public:
-    int ID;
+    int ID{ 0 };
     int ruleID{ -1 };
     example_index1D examples;
 
@@ -142,7 +142,7 @@ public:
 
     int1D classCounts;
     mutable float1D probs;
-    mutable int totalCount;
+    mutable int totalCount{ 0 };
 
     double entropy;
 

@@ -135,7 +135,7 @@ std::istream& operator>>(std::istream& istr, TBLTree& tree) {
     int no_rules;
     std::string str;
     std::string line;
-    line_splitter ls;
+    line_splitter_view ls;
     getline(istr, line);
     ls.split(line);
     no_rules = atoi1(ls[1]);
@@ -146,7 +146,7 @@ std::istream& operator>>(std::istream& istr, TBLTree& tree) {
     ls.split(line);
 
     for (int i = 1; i < ls.size(); i++) {
-        dict.insert(ls[i]);
+        dict.insert(std::string(ls[i]));
         // 	cerr << "Word: " << ls[i] << " index: " << dict[ls[i]] << endl;
     }
 
@@ -219,7 +219,7 @@ void TBLTree::readClasses(const std::string& file) {
             v[0] = PredicateTemplate::name_map[i];
             PredicateTemplate pt(v);
             templates.push_back(pt);
-            PredicateTemplate::TemplateNames.push_back(PredicateTemplate::name_map[i] + "_0");
+            PredicateTemplate::TemplateNames.push_back(std::string(PredicateTemplate::name_map[i]) + "_0");
         }
         initialized = true;
     }

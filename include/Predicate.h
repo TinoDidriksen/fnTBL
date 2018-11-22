@@ -168,10 +168,7 @@ public:
     }
 
     Predicate()
-      :
-
-      tokens(0)
-
+      : tokens(0)
     {}
 
     ~Predicate() {
@@ -230,7 +227,7 @@ public:
 
     bool test(const wordType2D& corpus, int word) const;
 
-    double test(const wordType2D& /*corpus*/, int word, const float2D& context_prob) const;
+    double test(const wordType2D& corpus, int word, const float2D& context_prob) const;
 
     bool operator==(const Predicate& pred) const {
         if (template_id != pred.template_id || tokens.size() != pred.tokens.size()) {

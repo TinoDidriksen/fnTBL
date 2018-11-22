@@ -61,17 +61,17 @@ public:
 
     bool test(const wordType2D& corpus, int sample_ind, const wordType value) const override {
         static Dictionary& dict = Dictionary::GetDictionary();
-        const std::string& xfix = dict[value];
+        auto xfix = dict[value];
         ON_DEBUG(
           assert(len + 2 == xfix.size()));
-        const std::string& word = dict[corpus[sample_difference + sample_ind][feature_id]];
+        auto word = dict[corpus[sample_difference + sample_ind][feature_id]];
 
         int sz = word.size();
         if (sz < len) {
             return false;
         }
 
-        std::string::const_iterator p1, p2;
+        std::string_view::const_iterator p1, p2;
 
         if (is_prefix) {
             p1 = xfix.begin();
@@ -95,16 +95,16 @@ public:
 
     std::string printMe(wordType instance) const override {
         Dictionary& dict = Dictionary::GetDictionary();
-        const std::string& addition = dict[instance];
+        auto addition = dict[instance];
         static std::string add_size;
         add_size = itoa(len);
         if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
-            return PredicateTemplate::name_map[feature_id] + "::" +
-                   (is_prefix ? add_size + "--" : "--" + add_size) + "=" + addition;
+            return std::string(PredicateTemplate::name_map[feature_id]) + "::" +
+                   (is_prefix ? add_size + "--" : "--" + add_size) + "=" + std::string(addition);
         }
         {
-            return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "::" +
-                   (is_prefix ? add_size + "--" : "--" + add_size) + "=" + addition;
+            return std::string(PredicateTemplate::name_map[feature_id]) + "_" + itoa(sample_difference) + "::" +
+                   (is_prefix ? add_size + "--" : "--" + add_size) + "=" + std::string(addition);
         }
     }
 
@@ -114,7 +114,7 @@ public:
 
 inline void PrefixSuffixRemovePredicate::instantiate(const wordType2D& corpus, int sample_ind, wordTypeVector& instances) const {
     Dictionary& dict = Dictionary::GetDictionary();
-    const std::string& word = dict[corpus[sample_ind + sample_difference][feature_id]];
+    auto word = dict[corpus[sample_ind + sample_difference][feature_id]];
     std::string::size_type word_len = word.size();
     if (word_len <= len) {
         return;
@@ -148,7 +148,7 @@ inline void PrefixSuffixRemovePredicate::instantiate(const wordType2D& corpus, i
 
 inline void PrefixSuffixRemovePredicate::identify_strings(wordType word_id, wordType_set& words) const {
     Dictionary& dict = Dictionary::GetDictionary();
-    const std::string& word = dict[word_id];
+    auto word = dict[word_id];
     std::string::size_type word_len = word.size();
     if (word_len <= len) {
         return;

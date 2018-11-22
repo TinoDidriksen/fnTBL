@@ -111,10 +111,10 @@ inline std::string SingleFeaturePredicate::printMe(wordType instance) const {
     Dictionary& dict = Dictionary::GetDictionary();
 
     if (std::max(-PredicateTemplate::MaxBackwardLookup, +PredicateTemplate::MaxForwardLookup) == 0) {
-        return PredicateTemplate::name_map[feature_id] + "=" + dict[instance];
+        return std::string(PredicateTemplate::name_map[feature_id]) + "=" + std::string(dict[instance]);
     }
     {
-        return PredicateTemplate::name_map[feature_id] + "_" + itoa(sample_difference) + "=" + dict[instance];
+        return std::string(PredicateTemplate::name_map[feature_id]) + "_" + itoa(sample_difference) + "=" + std::string(dict[instance]);
     }
 }
 

@@ -120,7 +120,7 @@ protected:
 inline std::string FeatureSequencePredicate::printMe(wordType instance) const {
     Dictionary& dict = Dictionary::GetDictionary();
     static std::string str;
-    str.assign(PredicateTemplate::name_map[feature_id] + ":[" + itoa(sample_start) + "," + itoa(sample_end) + "]");
+    str.assign(std::string(PredicateTemplate::name_map[feature_id]) + ":[" + itoa(sample_start) + "," + itoa(sample_end) + "]");
     if (RuleTemplate::rvariables.find(str) != RuleTemplate::rvariables.end())
         str = RuleTemplate::rvariables[str];
     str.append("=");
