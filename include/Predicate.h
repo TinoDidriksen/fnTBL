@@ -137,7 +137,7 @@ public:
     using order_rep_type = unsigned char;
     using token_vector_type = svector<wordType>;
 
-    Predicate(string1D& ruleComponents) {
+    Predicate(string1D_v& ruleComponents) {
         create_from_words(ruleComponents);
     }
 
@@ -162,51 +162,53 @@ public:
     Predicate(const Predicate& p)
       : template_id(p.template_id)
       , hashIndex(p.hashIndex)
-      , tokens(p.tokens) {
-        allocate_order();
-        std::copy(p.order, p.order + tokens.size(), order);
-    }
+      , tokens(p.tokens)
+      , order(p.order)
+    {}
+
+    Predicate(Predicate&&) = default;
 
     Predicate()
       : tokens(0)
     {}
 
-    ~Predicate() {
-        free_order();
-        order = nullptr;
-    }
+    ~Predicate() = default;
 
-    void create_from_words(string1D& ruleComponents);
+    void create_from_words(string1D_v& ruleComponents);
 
     void create_order() {
         static Dictionary& dict = Dictionary::GetDictionary();
         int sz = tokens.size();
 
         static std::vector<int> counts;
+        static std::string order_s;
 
         counts.resize(sz);
+        order_s.resize(sz);
         // 	counts.clear();
 
         for (int i = 0; i < sz; i++) {
             counts[i] = dict.getCounts(tokens[i]);
         }
 
-        allocate_order();
+        std::iota(order_s.begin(), order_s.end(), 0);
+        std::sort(order_s.begin(), order_s.end(), Sorter(counts));
 
-        std::iota(order, order + tokens.size(), 0);
-        std::sort(order, order + tokens.size(), Sorter(counts));
+        auto it = uniq_strings.insert(order_s);
+        order = *it.first;
     }
 
 public:
     short int template_id{ -1 };
     int hashIndex{ 0 };
     token_vector_type tokens;
-    order_rep_type* order{ nullptr };
+    std::string_view order;
+    static std::unordered_set<std::string> uniq_strings;
 
 public:
-    int hashVal() {
+    int hashVal() const {
         int value = 0;
-        for (unsigned int& token : tokens) {
+        for (auto& token : tokens) {
             value = 5 * value + token;
         }
 
@@ -235,8 +237,8 @@ public:
         }
 
         int sz = tokens.size();
-        for (order_rep_type* i = order; i != order + sz; ++i) {
-            if (tokens[*i] != pred.tokens[*i]) {
+        for (auto i : order) {
+            if (tokens[i] != pred.tokens[i]) {
                 return false;
             }
         }
@@ -248,10 +250,8 @@ public:
         if (this != &pred) {
             hashIndex = pred.hashIndex;
             template_id = pred.template_id;
-            free_order();
             tokens = pred.tokens;
-            allocate_order();
-            std::copy(pred.order, pred.order + tokens.size(), order);
+            order = pred.order;
         }
         return *this;
     }
@@ -266,11 +266,9 @@ public:
     };
 
     static void deallocate_all() {
-        memory_pool.destroy();
     }
 
     static void clear_memory() {
-        memory_pool.dump();
     }
 
     int get_least_frequent_feature_position() const {
@@ -284,24 +282,12 @@ public:
 
         return -1;
     }
-
-protected:
-    static sized_memory_pool<order_rep_type> memory_pool;
-
-    void allocate_order() {
-        order = memory_pool.allocate(tokens.size());
-    }
-
-    void free_order() {
-        memory_pool.deallocate(order, tokens.size());
-    }
 };
 
 inline bool Predicate::test(const wordType2D& corpus, int word) const {
     PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
-    int sz = tokens.size();
-    for (order_rep_type* feature = order; feature != order + sz; ++feature) {
-        if (!pred_template[*feature].test(corpus, word, tokens[*feature])) {
+    for (auto feature : order) {
+        if (!pred_template[feature].test(corpus, word, tokens[feature])) {
             return false;
         }
     }
@@ -312,9 +298,8 @@ inline bool Predicate::test(const wordType2D& corpus, int word) const {
 inline double Predicate::test(const wordType2D& corpus, int word, const float2D& context_prob) const {
     PredicateTemplate& pred_template = PredicateTemplate::Templates[template_id];
     double prob = 1;
-    int sz = tokens.size();
-    for (order_rep_type* feature = order; feature != order + sz; ++feature) {
-        prob *= pred_template[*feature].test(corpus, word, tokens[*feature], context_prob);
+    for (auto feature : order) {
+        prob *= pred_template[feature].test(corpus, word, tokens[feature], context_prob);
     }
 
     return prob;

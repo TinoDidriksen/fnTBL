@@ -65,7 +65,7 @@ wordType3D corpus;
 
 wordType3DVector ruleTrace;
 rule_vector allRules;
-std::string allRules_data;
+mmap_region allRules_data;
 bool v_flag;
 bool p_flag;
 bool soft_probabilities;
@@ -109,27 +109,107 @@ inline bool is_state(featureIndexType pos) {
 
 // this function reads in the rules.
 void readInRules(char* fileName) {
-    std::istream* in;
-    smart_open(in, fileName);
-	allRules_data.assign(std::istreambuf_iterator<char>{*in}, {});
+    std::string nf{ fileName };
+    nf += ".cache";
 
-	for (std::string_view line{ nextline(allRules_data) }; !line.empty(); line = nextline(allRules_data, line)) {
-        if (line.empty() || line[0] == '#') {
-            continue;
-        }
+    struct stat _stat {};
 
-        std::string::size_type pos;
-        if ((pos = line.find("RULE: ")) != line.npos) {
-            line = line.substr(pos + 6);
-        }
+    stat(fileName, &_stat);
+    auto stat_data = _stat.st_mtime;
+
+    auto stat_err = stat(nf.c_str(), &_stat);
+    auto stat_cache = _stat.st_mtime;
+
+    // If data file is newer or the cache is empty, (re)create cache
+    if (stat_err != 0 || stat_data >= stat_cache) {
+        allRules_data = mmap_region{ fileName };
 
         line_splitter_view splitLine;
-        splitLine.split(line);
+        for (std::string_view line{ nextline(allRules_data) }; !line.empty(); line = nextline(allRules_data, line)) {
+            if (line.empty() || line[0] == '#') {
+                continue;
+            }
 
-        allRules.push_back(Rule(splitLine.data()));
+            std::string_view::size_type pos;
+            if ((pos = line.find("RULE: ")) != line.npos) {
+                line = line.substr(pos + 6);
+            }
+
+            splitLine.split(line);
+
+            allRules.push_back(Rule(splitLine.data()));
+        }
+
+        Dictionary::GetDictionary().mdb_commit();
+
+        std::ofstream out(nf, std::ios::binary);
+
+        auto w_u32 = [&](uint32_t v) {
+            out.write(reinterpret_cast<const char*>(&v), sizeof(v));
+        };
+
+        w_u32(allRules.size());
+        for (auto& rule : allRules) {
+            w_u32(rule.hashIndex);
+            w_u32(rule.good);
+            w_u32(rule.bad);
+
+            w_u32(rule.predicate.template_id);
+
+            auto& str = rule.predicate.order;
+            w_u32(str.size());
+            out.write(str.data(), str.size());
+
+            auto& pts = rule.predicate.tokens;
+            w_u32(pts.size());
+            for (auto& pt : pts) {
+                w_u32(pt);
+            }
+
+            auto& tvs = rule.target.vals;
+            w_u32(rule.target.tid);
+            w_u32(tvs.size());
+            for (auto& tv : tvs) {
+                w_u32(tv);
+            }
+        }
     }
+    else {
+        std::ifstream in(nf, std::ios::binary);
 
-    delete in;
+        auto r_u32 = [&]() {
+            uint32_t v = 0;
+            in.read(reinterpret_cast<char*>(&v), sizeof(v));
+            return v;
+        };
+
+        allRules.resize(r_u32());
+        for (size_t i = 0; i < allRules.size(); ++i) {
+            Rule& r = allRules[i];
+            r.hashIndex = r_u32();
+            r.good = r_u32();
+            r.bad = r_u32();
+
+            r.predicate.template_id = r_u32();
+
+            static std::string str;
+            str.resize(r_u32());
+            in.read(&str[0], str.size());
+            auto it = Predicate::uniq_strings.insert(str);
+            r.predicate.order = *it.first;
+
+            r.predicate.tokens.resize(r_u32());
+            for (size_t k = 0; k < r.predicate.tokens.size(); ++k) {
+                r.predicate.tokens[k] = r_u32();
+            }
+
+            r.target.tid = r_u32();
+            r.target.vals.resize(r_u32());
+            for (size_t k = 0; k < r.target.vals.size(); ++k) {
+                r.target.vals[k] = r_u32();
+            }
+        }
+    }
 }
 
 // This runs a rule on the corpus.

@@ -204,6 +204,10 @@ public:
         reverse_trie.destroy();
     }
 
+    void mdb_commit() {
+        word_index.mdb_commit();
+    }
+
 private:
     int1D word_counts;
     word_index_type word_index;

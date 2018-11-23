@@ -230,9 +230,11 @@ public:
     Target(int template_id, wordTypeVector words)
       : tid(template_id)
       , vals(std::move(words)) {}
-    Target(string1D& words) {
+    Target(string1D_v& words) {
         create_from_words(words);
     }
+
+    Target(Target&&) = default;
 
     ~Target() = default;
 
@@ -244,7 +246,7 @@ public:
         return TargetTemplate::Templates[tid].affects(corpus, vals);
     }
 
-    void create_from_words(string1D& ruleComponents);
+    void create_from_words(string1D_v& ruleComponents);
 
     void apply(wordType1D& corpus) const {
         TargetTemplate::Templates[tid].apply(corpus, vals);

@@ -66,6 +66,8 @@ public:
         ON_DEBUG(rule_name = "");
     }
 
+    Rule(Rule&&) = default;
+
     ~Rule() = default;
 
     bool operator()(const wordType2D& corpus, int word) const {

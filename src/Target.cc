@@ -109,7 +109,7 @@ void TargetTemplate::instantiate(const wordType1D& corpus, wordType2DVector& ins
     }
 }
 
-void Target::create_from_words(string1D& ruleComponents) {
+void Target::create_from_words(string1D_v& ruleComponents) {
     vals.resize(ruleComponents.size());
     static line_splitter es("=", false); // equality splitter
     int num_features = static_cast<int>(ruleComponents.size());
@@ -124,15 +124,16 @@ void Target::create_from_words(string1D& ruleComponents) {
             exit(1);
         }
 
-        std::string
+        std::string_view
           s1 = ruleComponents[i].substr(0, p),
           s2 = ruleComponents[i].substr(p + 1);
 
         if (template_name.empty()) {
-            template_name = s1;
+            template_name.assign(s1);
         }
         else {
-            template_name += " " + s1;
+            template_name += ' ';
+            template_name.append(s1);
         }
 
         vals[i] = dict.insert(s2);
@@ -141,7 +142,7 @@ void Target::create_from_words(string1D& ruleComponents) {
     tid = TargetTemplate::FindTemplate(template_name);
     if (tid == -1) {
         std::cerr << "The predicate ";
-        std::copy(ruleComponents.begin(), ruleComponents.end(), std::ostream_iterator<std::string>(std::cerr, " "));
+        std::copy(ruleComponents.begin(), ruleComponents.end(), std::ostream_iterator<std::string_view>(std::cerr, " "));
         std::cerr << " does not have a recognizable template!" << std::endl
                   << "Please remove it or add a corresponding template!" << std::endl;
         exit(3);

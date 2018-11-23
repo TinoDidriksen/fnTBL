@@ -327,6 +327,36 @@ public:
         cursor.close();
     }
 
+    void mdb_commit() {
+        if (!index_map.size()) {
+            return;
+        }
+
+        rd.reset();
+
+        lmdb_writer wr{ db };
+        lmdb::val key;
+        lmdb::val value;
+
+        for (auto& kv : index_map) {
+            uint32_t v = kv.second;
+            key.assign(kv.first.data(), kv.first.size());
+            value.assign(&v, sizeof(v));
+            if (wr.dbi.put(wr.txn, key, value, MDB_NODUPDATA | MDB_NOOVERWRITE)) {
+                ++db_size;
+            }
+        }
+
+        key.assign("__NUM_ENTRIES");
+        value.assign(&db_size, sizeof(db_size));
+        wr.dbi.put(wr.txn, key, value);
+
+        wr.txn.commit();
+
+        index_map.clear();
+        mdb_done();
+    }
+
     auto& mdb_rd() {
         return *rd;
     }

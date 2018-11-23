@@ -47,7 +47,7 @@ extern featureIndexType STATE;
 Dictionary PredicateTemplate::name_map;
 string1D PredicateTemplate::TemplateNames;
 std::vector<PredicateTemplate> PredicateTemplate::Templates;
-sized_memory_pool<Predicate::order_rep_type> Predicate::memory_pool(100);
+std::unordered_set<std::string> Predicate::uniq_strings;
 HASH_NAMESPACE::hash_map<std::string, std::string> PredicateTemplate::variables;
 
 relativePosType PredicateTemplate::MaxBackwardLookup = 0;
@@ -357,7 +357,7 @@ void PredicateTemplate::identify_strings(wordType word_id, wordType_set& words) 
 // // The format of a rule is:
 // // <template_unit>=<value> [<template_unit>=value...] => target
 // // and, therefore, the second to last element should be ignored too.
-void Predicate::create_from_words(string1D& ruleComponents) {
+void Predicate::create_from_words(string1D_v& ruleComponents) {
     tokens.resize(ruleComponents.size());
     static line_splitter es("=", false); // equality splitter
     int num_features = static_cast<int>(ruleComponents.size());
@@ -372,7 +372,7 @@ void Predicate::create_from_words(string1D& ruleComponents) {
             exit(1);
         }
 
-        std::string
+        std::string_view
           s1 = ruleComponents[i].substr(0, p),
           s2 = ruleComponents[i].substr(p + 1);
 
@@ -382,10 +382,13 @@ void Predicate::create_from_words(string1D& ruleComponents) {
             s1 = RuleTemplate::variables[s3];
         }
 
-        if (template_name == "")
-            template_name = s1;
-        else
-            template_name += " " + s1;
+        if (template_name.empty()) {
+            template_name.assign(s1);
+        }
+        else {
+            template_name += ' ';
+            template_name.append(s1);
+        }
 
         tokens[i] = dict.insert(s2);
     }
@@ -393,7 +396,7 @@ void Predicate::create_from_words(string1D& ruleComponents) {
     template_id = PredicateTemplate::FindTemplate(template_name);
     if (template_id == -1) {
         std::cerr << "The predicate ";
-        std::copy(ruleComponents.begin(), ruleComponents.end(), std::ostream_iterator<std::string>(std::cerr, " "));
+        std::copy(ruleComponents.begin(), ruleComponents.end(), std::ostream_iterator<std::string_view>(std::cerr, " "));
         std::cerr << " does not have a recognizable template!" << std::endl
                   << "Please remove it or add a corresponding template!" << std::endl;
         exit(3);

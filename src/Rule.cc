@@ -74,7 +74,7 @@ Rule::Rule(string1D_v& rule_components)
         exit(1323);
     }
 
-    string1D pred_part(pos - rule_components.begin()), truth_part(rule_components.end() - pos - 1);
+    string1D_v pred_part(pos - rule_components.begin()), truth_part(rule_components.end() - pos - 1);
     copy(rule_components.begin(), pos, pred_part.begin());
     copy(pos + 1, rule_components.end(), truth_part.begin());
     predicate.create_from_words(pred_part);
